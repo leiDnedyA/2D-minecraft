@@ -1,0 +1,25 @@
+{
+  "name": "2d-minecraft",
+  "version": "1.0.0",
+  "description": "A 2D multiplayer browser game inspired by minecraft",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leiDnedyA/2D-minecraft.git"
+  },
+  "author": "Ayden Diel",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/leiDnedyA/2D-minecraft/issues"
+  },
+  "homepage": "https://github.com/leiDnedyA/2D-minecraft#readme",
+  "dependencies": {
+    "dotenv": "^12.0.3",
+    "express": "^4.17.2",
+    "socket.io": "^4.4.1"
+  }
+}
