@@ -1,5 +1,6 @@
 
 const Entity = require("./entity.js");
+const CharController = require("./charController.js");
 
 /**
  * ECS representation of a Player in the world.
@@ -15,6 +16,7 @@ class Player extends Entity{
     constructor(id, username, position = [0, 0]){
         super(id, position, 'Player');
         this.username = username;
+        this.charController = new CharController(this);
     }
 }
 

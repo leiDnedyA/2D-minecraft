@@ -60,8 +60,14 @@ const handleNewConnection = (socket)=>{
     let c = new Client(socket, generateUID());
     let id = c.id;
     clients[id] = c;
-    c.createPlayer([Math.random() * 5, Math.random() * 5]);
+    c.createPlayer([Math.random() * 20, Math.random() * 20]);
     entities[id] = c.player;
+
+    //all socket.on calls
+
+    socket.on("clientInput", (data)=>{
+        c.player.charController.setKeysDown(data.keysDown);
+    })
 
     socket.on('disconnect', ()=>{
         delete clients[id];

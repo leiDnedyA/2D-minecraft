@@ -6,6 +6,7 @@ const gameCanvas = document.querySelector("#gameCanvas");
 
 //modules
 const renderer = new Renderer(gameCanvas);
+const charController = new CharController(socket, gameCanvas);
 
 //constant variables
 const fps = 30;
@@ -24,7 +25,6 @@ const update = ()=>{
 //socket interactions
 socket.on("entityData", (data)=>{
 entities = data.entities;
-console.log(entities);
 })
 
 //game loop
