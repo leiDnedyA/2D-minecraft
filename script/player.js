@@ -17,6 +17,16 @@ class Player extends Entity{
         super(id, position, 'Player');
         this.username = username;
         this.charController = new CharController(this);
+        this.speedMultiplier = 2;
+    
+        this.update = this.update.bind(this);
+    }
+
+    update(deltaTime){
+        super.update(deltaTime);
+        this.charController.update(deltaTime);
+
+        
     }
 }
 

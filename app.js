@@ -34,16 +34,19 @@ const loadedChunks = {};
 
 //game loop variables
 const fps = 30;
-var deltaTime = Date.now();
+var lastUpdate = Date.now();
 
 //game functions
 const update = ()=>{
-    deltaTime = Date.now() - deltaTime;
+    let now = Date.now();
+    let deltaTime = (now - lastUpdate) / (1000/fps);
+    lastUpdate = now;
 
     let entityData = [];
 
     for(let i in entities){
         let e = entities[i];
+        e.update(deltaTime);
         entityData.push({id: e.id, position: e.position, type: e.getType()});
     }
 
