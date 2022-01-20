@@ -15,6 +15,7 @@ const generateUID = (length = 16) => {
 //game component imports
 const Client = require("./script/client.js");
 const Entity = require("./script/entity.js");
+const ChunkManager = require("./script/chunkManager.js");
 
 //server component imports
 const express = require("express");
@@ -26,10 +27,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Socket.Server(server);
 
+//game modules
+const chunkManager = new ChunkManager();
 
 //game data
 const clients = {};
-const entities = {};
 const loadedChunks = {};
 
 //game loop variables
@@ -44,19 +46,12 @@ const update = ()=>{
 
     let entityData = [];
 
-    for(let i in entities){
-        let e = entities[i];
-        e.update(deltaTime);
-        entityData.push({id: e.id, position: e.position, type: e.getType()});
-    }
+    chunkManager.update(deltaTime);
 
     for(let i in clients){
-        let c = clients[i];
-
-        let data = {chunk: 0, entities: entityData};
-
-        c.socket.emit('entityData', data);
+        chunkManager.updateClient(clients[i]);
     }
+
 }
 
 const handleNewConnection = (socket)=>{
@@ -64,7 +59,8 @@ const handleNewConnection = (socket)=>{
     let id = c.id;
     clients[id] = c;
     c.createPlayer([Math.random() * 20, Math.random() * 20]);
-    entities[id] = c.player;
+    c.updateChunks();
+    chunkManager.addPlayer(c);
 
     //all socket.on calls
 
@@ -73,8 +69,8 @@ const handleNewConnection = (socket)=>{
     })
 
     socket.on('disconnect', ()=>{
+        chunkManager.removePlayer(c);
         delete clients[id];
-        delete entities[id];
     })
 }
 

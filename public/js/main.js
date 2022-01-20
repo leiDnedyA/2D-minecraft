@@ -27,5 +27,9 @@ socket.on("entityData", (data)=>{
 entities = data.entities;
 })
 
+socket.on("chunkData", (data)=>{
+    entities = data.entityList;
+})
+
 //game loop
 setInterval(update, 1000/fps);
