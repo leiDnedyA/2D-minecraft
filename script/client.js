@@ -36,16 +36,21 @@ class Client {
 
     /**
      * Updates the list of current chunk IDs based on player pos.
+     * @returns {string} id of player's last chunk
      */
     updateChunks(){
         let playerPos = this.player.position;
-        // let chunkPos = [this.player.position[0]/64, this.player.position[1]/64];
-        let chunkPos = [0, 0];
+        let chunkPos = [Math.floor(this.player.position[0] / 64), Math.floor(this.player.position[1] / 64)];
+        // let chunkPos = [0, 0];
         
         let mainID = `${chunkPos[0]}x${chunkPos[1]}`;
 
+        let lastChunk = this.currentChunkID;
+
         this.currentChunkID = mainID;
         this.currentChunkIDs[0] = mainID;
+
+        return lastChunk;
     }
 
     /**

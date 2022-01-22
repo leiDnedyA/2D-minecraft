@@ -16,19 +16,21 @@ var deltaTime = Date.now();
 
 //world variables
 var entities = [];
+var tileMap = [];
+var tileMapOffset = [0, 0];
 
 const update = ()=>{
     deltaTime = Date.now() - deltaTime;
-    renderer.render(entities);
+    renderer.render(entities, tileMap, tileMapOffset);
 }
-
-//socket interactions
-socket.on("entityData", (data)=>{
-entities = data.entities;
-})
 
 socket.on("chunkData", (data)=>{
     entities = data.entityList;
+    tileMapOffset[0] = data.chunkPos[0] * 64;
+    tileMapOffset[1] = data.chunkPos[1] * 64;
+    if(data.hasOwnProperty("tileMap")){
+        tileMap = data.tileMap;
+    }
 })
 
 //game loop

@@ -1,5 +1,15 @@
 const Chunk = require("./chunk.js");
 
+const chunkStorage = {};
+
+const sampleMap = ()=>{
+    let m = [];
+    for (let i = 0; i < 64; i++) {
+        m.push((Math.floor(Math.random() * 10) > 3) ? 0 : 1);
+    }
+    return m;
+};
+
 /**
  * Handles everything to do with chunks.
  */
@@ -14,6 +24,7 @@ class ChunkManager{
         this.update = this.update.bind(this);
         this.updateClient = this.updateClient.bind(this);
         this.addPlayer = this.addPlayer.bind(this);
+        this.switchPlayerChunk = this.switchPlayerChunk.bind(this);
         this.removePlayer = this.removePlayer.bind(this);
         this.checkChunkExists = this.checkChunkExists.bind(this);
         this.createChunk = this.createChunk.bind(this);
@@ -22,12 +33,9 @@ class ChunkManager{
         this.unloadChunk = this.unloadChunk.bind(this);
         this.saveChunk = this.saveChunk.bind(this);
 
-        let sampleMap = [];
-        for(let i = 0; i < 64; i++){
-            sampleMap.push(0);
-        }
+        
 
-        this.loadedChunks['0x0'] = new Chunk([0, 0], sampleMap, {}, this);
+        this.loadedChunks['0x0'] = new Chunk([0, 0], sampleMap(), {}, this);
     }
 
     update(deltaTime){
@@ -43,22 +51,23 @@ class ChunkManager{
      * @returns {Object} data to send to client
      */
     updateClient(client){
-        client.updateChunks();
+
+        let lastChunk = client.updateChunks();
+
+        if(lastChunk !== client.currentChunkID){
+            this.switchPlayerChunk(client, lastChunk, client.currentChunkID);
+        }
 
         for (let i in client.currentChunkIDs){
             let id = client.currentChunkIDs[i];
 
-            if (this.loadedChunks.hasOwnProperty(id)){
-                client.emitChunkData(this.loadedChunks[id].getJSON());
-            }else if(this.checkChunkExists(id)){
-
-            }
+            client.emitChunkData(this.loadedChunks[id].getShortJSON());
         }
 
     }
 
     /**
-     * Adds a player to a chunk based on a Client instance.
+     * Adds a player game.
      * 
      * @param {Client} client instance of client holding the player and chunk info.
      */
@@ -66,11 +75,12 @@ class ChunkManager{
         if(this.loadedChunks.hasOwnProperty(client.currentChunkID)){
             let chunk = this.loadedChunks[client.currentChunkID];
             chunk.entityList[client.id] = client.player;
+            client.emitChunkData(chunk.getJSON())
         }
     }
 
     /**
-     * Removes a player to a chunk based on a Client instance.
+     * Removes a player from game.
      * 
      * @param {Client} client instance of client holding the player and chunk info.
      */
@@ -81,28 +91,93 @@ class ChunkManager{
         }
     }
 
-    checkChunkExists(id){
+    /**
+     * Takes a player from one chunk and moves it to another.
+     * 
+     * @param {Client} client instance of client.
+     * @param {string} lastChunkID id of previous chunk.
+     * @param {string} nextChunkID id of next chunk.
+     */
+    switchPlayerChunk(client, lastChunkID, nextChunkID){
+        // console.log(`Chunk ${nextChunkID} ${(this.checkChunkExists(nextChunkID))? 'exists' : `doesn't exist`}.`);
+        let nextChunk = this.loadChunk(nextChunkID);
+        let lastChunk = this.loadChunk(lastChunkID);
 
+        lastChunk.removeEntity(client.id);
+        nextChunk.addEntity(client.player);
+        client.emitChunkData(nextChunk.getJSON());
     }
 
-    createChunk(){
+    checkChunkExists(id){
+        if(this.loadedChunks.hasOwnProperty(id)){
+            return true;
+        }
+        if(chunkStorage.hasOwnProperty(id)){ //CHANGE THIS TO CHECK ACTUAL WORLD FILE
+            return true;
+        }
+        return false;
+    }
 
+    /**
+     * Creates a chunk.
+     * 
+     * @param {string} id chunk ID
+     * @returns {Chunk} chunk created.
+     */
+    createChunk(id){
+        let pos = id.split('x').map((v)=>{
+            return parseFloat(v);
+        }) 
+        return new Chunk(pos, sampleMap(), {}, this);
     }
 
     generateChunk(){
 
     }
 
-    loadChunk(){
+    /**
+     * Loads a chunk.
+     * 
+     * @param {string} id id of requested chunk
+     * @returns {Chunk} loaded chunk
+     */
+    loadChunk(id){
 
+        if(this.loadedChunks.hasOwnProperty(id)){
+            // console.log(`WARNING. Chunk ${id} was attempted to load but was already loaded.`);
+            return this.loadedChunks[id];
+        }
+
+        if(chunkStorage.hasOwnProperty(id)){
+            this.loadedChunks[id] = chunkStorage[id];
+        }else{
+            let chunk = this.createChunk(id);
+            this.saveChunk(chunk, id);
+            this.loadedChunks[id] = chunk;
+        }
+        return this.loadedChunks[id];
     }
 
-    unloadChunk(){
-
+    /**
+     * Unloads a chunk.
+     * 
+     * @param {string} id id of chunk to unload. 
+     */
+    unloadChunk(id){
+        if(this.loadedChunks.hasOwnProperty(id)){
+            delete this.loadedChunks[id];
+        }
     }
 
-    saveChunk(){
-
+    /**
+     * Saves a chunk.
+     * 
+     * @param {Chunk} chunk chunk to be saved
+     * @param {string} id id of chunk
+     */
+    saveChunk(chunk, id){
+        //CHANGE TO ACTUALLY STORE IN FILE EVENTUALLY
+        chunkStorage[id] = chunk;
     }
 }
 
