@@ -64,6 +64,8 @@ const handleNewConnection = (socket)=>{
 
     //all socket.on calls
 
+    socket.emit('init', {clientID: id});
+
     socket.on("clientInput", (data)=>{
         c.player.charController.setKeysDown(data.keysDown);
     })

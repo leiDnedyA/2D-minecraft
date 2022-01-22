@@ -4,8 +4,8 @@ const chunkStorage = {};
 
 const sampleMap = ()=>{
     let m = [];
-    for (let i = 0; i < 64; i++) {
-        m.push((Math.floor(Math.random() * 10) > 3) ? 0 : 1);
+    for (let i = 0; i < 4096; i++) {
+        m.push((Math.floor(Math.random() * 10) > .5) ? 0 : 1);
     }
     return m;
 };
