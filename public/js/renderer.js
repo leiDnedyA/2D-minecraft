@@ -20,6 +20,8 @@ const tileDict = {
 
 const chunkDimensions = 64;
 
+const motionBlur = .1;
+
 /**
  * Renders game to canvas.
  */
@@ -31,6 +33,22 @@ class Renderer{
     constructor(canvas){
         this.canvas = canvas;
         this.ctx = this.canvas.getContext('2d');
+        this.ctx.globalAlpha = motionBlur;
+
+        //all the shit I have to do to solve the image scaling problem
+        this.canvas.style.cssText = 'image-rendering: optimizeSpeed;' + // FireFox < 6.0
+            'image-rendering: -moz-crisp-edges;' + // FireFox
+            'image-rendering: -o-crisp-edges;' +  // Opera
+            'image-rendering: -webkit-crisp-edges;' + // Chrome
+            'image-rendering: crisp-edges;' + // Chrome
+            'image-rendering: -webkit-optimize-contrast;' + // Safari
+            'image-rendering: pixelated; ' + // Future browsers
+            '-ms-interpolation-mode: nearest-neighbor;'; // IE
+
+        this.ctx.webkitImageSmoothingEnabled = false;
+        this.ctx.mozImageSmoothingEnabled = false;
+        this.ctx.msImageSmoothingEnabled = false;
+        this.ctx.imageSmoothingEnabled = false;
 
         this.render = this.render.bind(this);
         this.cameraUpdate = this.cameraUpdate.bind(this);
@@ -38,6 +56,8 @@ class Renderer{
         this.handleResize = this.handleResize.bind(this);
         this.setTargetID = this.setTargetID.bind(this);
         this.cameraOffset = [0, 0];
+
+        this.currentTileMaps = []; //use this when optimizing
 
         this.targetID;
         this.lastTargetIndex = 0;
@@ -51,20 +71,33 @@ class Renderer{
 
     /**
      * Renders.
-     * @param {Array<Entity>} entities array of entities to render
-     * @param {Array<Object>} tileMaps array of tileMaps to render
+     * @param {Array<Chunk>} chunks array of chunks to render
      */
-    render(entities, tileMaps){
+    render(chunks){
         this.clear();
+
+        let entities = [];
+        let tileMaps = [];
+
+        for(let i in chunks){
+            let c = chunks[i];
+            if(c.entityList.length > 0){
+                entities = entities.concat(c.entityList);
+                
+            }
+            tileMaps.push({tileMap: c.tileMap, chunkPos: c.chunkPos});
+        }
+
+
 
         this.cameraUpdate(entities);
 
         for(let i in tileMaps){
             let map = tileMaps[i].tileMap;
-            let offset = tileMaps[i].offset;
+            let offset = [tileMaps[i].chunkPos[0]*64, tileMaps[i].chunkPos[1]*64];
             for(let i in map){
                 this.ctx.fillStyle = tileDict[map[i]];
-                this.ctx.fillRect((Math.floor(i % 64) + offset[0] + this.cameraOffset[0]) * this.unitSize, (Math.floor(i / 64) + offset[1] + this.cameraOffset[1])*this.unitSize, this.unitSize, this.unitSize);
+                this.ctx.fillRect(((Math.floor(i % 64) + offset[0] + this.cameraOffset[0]) * this.unitSize), ((Math.floor(i / 64) + offset[1] + this.cameraOffset[1])*this.unitSize), this.unitSize, this.unitSize);
             }
         }
 
@@ -81,8 +114,8 @@ class Renderer{
      */
     cameraUpdate(entities){
         let targetPos = [0, 0];
-        if(this.targetID){
-            if (this.targetID === entities[this.lastTargetIndex]){
+        if(this.targetID && entities.length > 0){
+            if (this.targetID === entities[this.lastTargetIndex].id){
                 targetPos = entities[this.lastTargetIndex].position;
             }else{
                 for(let i in entities){

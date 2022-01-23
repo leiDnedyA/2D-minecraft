@@ -58,11 +58,15 @@ class ChunkManager{
             this.switchPlayerChunk(client, lastChunk, client.currentChunkID);
         }
 
+        let clientChunkData = [];
+
         for (let i in client.currentChunkIDs){
             let id = client.currentChunkIDs[i];
-
-            client.emitChunkData(this.loadedChunks[id].getShortJSON());
+            // clientChunkData.push(this.loadChunk(id).getShortJSON()); put this back when optomizing
+            clientChunkData.push(this.loadChunk(id).getJSON());
         }
+
+        client.emitChunkData(clientChunkData);
 
     }
 
@@ -75,7 +79,7 @@ class ChunkManager{
         if(this.loadedChunks.hasOwnProperty(client.currentChunkID)){
             let chunk = this.loadedChunks[client.currentChunkID];
             chunk.entityList[client.id] = client.player;
-            client.emitChunkData(chunk.getJSON())
+            client.emitChunkData([chunk.getJSON()])
         }
     }
 

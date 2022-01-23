@@ -17,12 +17,11 @@ const clientData = {};
 
 //world variables
 var entities = [];
-var tileMap = [];
-var tileMapOffset = [0, 0];
+var chunks = [];
 
 const update = ()=>{
     deltaTime = Date.now() - deltaTime;
-    renderer.render(entities, [{tileMap: tileMap, offset: tileMapOffset}]);
+    renderer.render(chunks);
 }
 
 socket.on('init', (data)=>{
@@ -31,14 +30,7 @@ socket.on('init', (data)=>{
 })
 
 socket.on("chunkData", (data)=>{
-    entities = data.entityList;
-    tileMapOffset[0] = data.chunkPos[0] * 64;
-    tileMapOffset[1] = data.chunkPos[1] * 64;
-    if(data.hasOwnProperty("tileMap")){
-        console.log(data.tileMap)
-        tileMap = data.tileMap;
-        console.log(tileMapOffset);
-    }
+    chunks = data;
 })
 
 //game loop
