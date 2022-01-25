@@ -72,7 +72,7 @@ class Client {
      * @param {Array<{tileMap: [], chunkPos: []}>} chunks List of data for each chunk that the player has loaded  
      */
     emitChunkData(chunks){
-        this.socket.emit("chunkData", chunks);
+        this.socket.emit("chunkData", {chunks: chunks, clientPos: this.player.position});
     }
 }
 

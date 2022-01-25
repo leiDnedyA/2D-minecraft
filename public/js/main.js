@@ -30,7 +30,9 @@ socket.on('init', (data)=>{
 })
 
 socket.on("chunkData", (data)=>{
-    chunks = data;
+    chunks = data.chunks;
+    clientData.position = data.clientPos;
+    renderer.uiElements.coordinates.text = `[${clientData.position[0].toFixed(3)}, ${clientData.position[1].toFixed(3)}]`;
 })
 
 //game loop

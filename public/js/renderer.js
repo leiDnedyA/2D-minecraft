@@ -6,6 +6,11 @@ player color: #db2e2e
 muted green: #7aa
 */
 
+/**
+ * Valid UI Element IDs: 
+ * 'coordinates': text that holds coordinates in top left corner
+ */
+
 const gameColors = {
     background: "#000210",
     teal: "#41c2b4",
@@ -57,7 +62,12 @@ class Renderer{
         this.setTargetID = this.setTargetID.bind(this);
         this.cameraOffset = [0, 0];
 
-        this.currentTileMaps = []; //use this when optimizing
+        this.uiElements = {
+            coordinates: {
+                id: 'coordinates',
+                text: '[420, 69]'
+            }
+        };
 
         this.targetID;
         this.lastTargetIndex = 0;
@@ -105,6 +115,15 @@ class Renderer{
         for(let i in entities){
             let e = entities[i];
             this.ctx.fillRect((e.position[0] + this.cameraOffset[0]) * this.unitSize, (e.position[1] + this.cameraOffset[1]) * this.unitSize, this.unitSize, this.unitSize);
+        }
+
+        for(let i in this.uiElements){
+            let element = this.uiElements[i];
+            if(element.id === "coordinates"){
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = "bold 20px serif";
+                this.ctx.fillText(element.text, 5, 25);
+            }
         }
     }
 
