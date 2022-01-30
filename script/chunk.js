@@ -1,4 +1,10 @@
 
+const dimensions = [64, 64];
+
+const posToIndex = (position) => {
+    return Math.floor(position[1] * dimensions[0]) + Math.floor(position[0])
+}
+
 /**
  * Holds information about and handles events within an individual chunk.
  */
@@ -25,6 +31,7 @@ class Chunk {
         this.addEntity = this.addEntity.bind(this);
         this.getShortJSON = this.getShortJSON.bind(this);
         this.getJSON = this.getJSON.bind(this);
+        this.getTile = this.getTile.bind(this);
     }
 
     update(deltaTime){
@@ -84,6 +91,15 @@ class Chunk {
             eList.push({type: e.getType(), position: e.position, id: e.id});
         }
         return { tileMap: this.tileMap, entityList: eList, chunkPos: this.chunkPos };
+    }
+
+    /**
+     * Gets a tile within the chunk based on position.
+     * 
+     * @param {[number, number]} position position of desired tile
+     */
+    getTile(position){
+        return this.tileMap[posToIndex([Math.floor(position[0]), Math.floor(position[1])])];
     }
 }
 

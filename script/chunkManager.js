@@ -1,4 +1,5 @@
 const Chunk = require("./chunk.js");
+const tileDict = require("./tileDict.json")
 
 const chunkStorage = {};
 
@@ -9,6 +10,16 @@ const sampleMap = ()=>{
     }
     return m;
 };
+
+const chunkPosToID = (pos)=>{
+    return `${pos[0]}x${pos[1]}`;
+}
+
+const chunkIDToPos = (id)=>{
+    return id.split('x').map((v) => {
+        return parseFloat(v);
+    });
+}
 
 /**
  * Handles everything to do with chunks.
@@ -32,6 +43,7 @@ class ChunkManager{
         this.loadChunk = this.loadChunk.bind(this);
         this.unloadChunk = this.unloadChunk.bind(this);
         this.saveChunk = this.saveChunk.bind(this);
+        this.checkCollision = this.checkCollision.bind(this);
 
         
 
@@ -80,6 +92,7 @@ class ChunkManager{
             let chunk = this.loadedChunks[client.currentChunkID];
             chunk.entityList[client.id] = client.player;
             client.emitChunkData([chunk.getJSON()])
+            client.player.setCollisionCallback(this.checkCollision);
         }
     }
 
@@ -182,6 +195,23 @@ class ChunkManager{
     saveChunk(chunk, id){
         //CHANGE TO ACTUALLY STORE IN FILE EVENTUALLY
         chunkStorage[id] = chunk;
+    }
+
+    /**
+     * Checks whether a tile will cause a collision based on global position.
+     * 
+     * @param {[number, number]} position position of tile to check
+     */
+    checkCollision(position){
+        let chunkPosition = [Math.floor(position[0] / 64), Math.floor(position[1]/64)];
+        let chunkID = chunkPosToID(chunkPosition);
+        let chunk = this.loadChunk(chunkID);
+        let subPosition = [position[0] - chunkPosition[0] * 64, position[1] - chunkPosition[1] * 64] //position of tile within chunk
+        let tile = chunk.getTile(subPosition);
+        
+        // console.log(subPosition);
+
+        return (tileDict[`${tile}`] == 'wall');
     }
 }
 

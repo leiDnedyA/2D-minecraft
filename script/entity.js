@@ -22,10 +22,13 @@ class Entity{
         this.targetVelocity = [0, 0];
         this.velocityMultiplier = .5;
 
+        this.collisionCallback;
+
         this.update = this.update.bind(this);
         this.getType = this.getType.bind(this);
         this.setVelocity = this.setVelocity.bind(this);
         this.setTargetVelocity = this.setTargetVelocity.bind(this);
+        this.setCollisionCallback = this.setCollisionCallback.bind(this);
     }
 
     update(deltaTime){
@@ -35,10 +38,23 @@ class Entity{
             }
         }
 
+        let potentialPos = [0, 0]
+
         //eventually replace this part
-        for (let i in this.position) {
-            this.position[i] += this.velocity[i] * deltaTime * this.velocityMultiplier;
+        for (let i in potentialPos) {
+            potentialPos[i] = this.position[i] + this.velocity[i] * deltaTime * this.velocityMultiplier;
             // console.log(deltaTime);
+        }
+        
+        if(this.collisionCallback == null){
+            this.position = potentialPos;
+        }else{
+            if(!this.collisionCallback([potentialPos[0], this.position[1]])){
+                this.position[0] = potentialPos[0];
+            }
+            if (!this.collisionCallback([this.position[0], potentialPos[1]])) {
+                this.position[1] = potentialPos[1];
+            }
         }
     }
 
@@ -67,6 +83,18 @@ class Entity{
      */
     setTargetVelocity(v){
         this.targetVelocity = v;
+    }
+
+    /**
+     * Checks whether or not a speicified tile will result ina collision.
+     * e.g function callback(position){
+     *  return //true = don't walk, false = walk
+     * }
+     * 
+     * @param {function} c function to check whether or not a specified tile will result in a collision 
+     */
+    setCollisionCallback(c){
+        this.collisionCallback = c;
     }
 
 }
