@@ -44,7 +44,7 @@ class ChunkManager{
         this.unloadChunk = this.unloadChunk.bind(this);
         this.saveChunk = this.saveChunk.bind(this);
         this.checkCollision = this.checkCollision.bind(this);
-
+        this.solveCollision = this.solveCollision.bind(this);
         
 
         this.loadedChunks['0x0'] = new Chunk([0, 0], sampleMap(), {}, this);
@@ -92,7 +92,7 @@ class ChunkManager{
             let chunk = this.loadedChunks[client.currentChunkID];
             chunk.entityList[client.id] = client.player;
             client.emitChunkData([chunk.getJSON()])
-            client.player.setCollisionCallback(this.checkCollision);
+            client.player.setCollisionCallback(this.solveCollision);
         }
     }
 
@@ -198,9 +198,10 @@ class ChunkManager{
     }
 
     /**
-     * Checks whether a tile will cause a collision based on global position.
+     * [USE solveCollision] Checks whether a tile will cause a collision based on global position.
      * 
      * @param {[number, number]} position position of tile to check
+     * @returns {boolean} true: collision occured
      */
     checkCollision(position){
         let chunkPosition = [Math.floor(position[0] / 64), Math.floor(position[1]/64)];
@@ -209,10 +210,124 @@ class ChunkManager{
         let subPosition = [position[0] - chunkPosition[0] * 64, position[1] - chunkPosition[1] * 64] //position of tile within chunk
         let tile = chunk.getTile(subPosition);
         
-        // console.log(subPosition);
+        /**
+                 * give represents the 'wiggle room' given to the entity to solve 
+                 * the problem of hallways being impossible to go down
+                 */
+        let give = .07;
 
-        return (tileDict[`${tile}`] == 'wall');
+        let floorGive = num => (Math.floor(num + give))
+        let ceilGive = num => (Math.ceil(num - give));
+
+        //represents which tile each corner of a 1x1 entity at the position parameter will be in
+        let corners = {
+            'top': {
+                'left': [floorGive(position[0]), floorGive(position[1])],
+                'right': [ceilGive(position[0]), floorGive(position[1])]
+            },
+            'bottom': {
+                left: [floorGive(position[0]), ceilGive(position[1])],
+                right: [ceilGive(position[0]), ceilGive(position[1])]
+            }
+        }
+
+        for(let i in corners){
+            for(let j in corners[i]){
+                let pos = corners[i][j];
+
+                let chunkPosition = [Math.floor(pos[0] / 64), Math.floor(pos[1] / 64)];
+                let chunkID = chunkPosToID(chunkPosition);
+                let chunk = this.loadChunk(chunkID);
+                let subPosition = [pos[0] - chunkPosition[0] * 64, pos[1] - chunkPosition[1] * 64] //position of tile within chunk
+                let tile = chunk.getTile(subPosition);
+
+                if(tileDict[tile] === 'wall'){
+                    return true;
+                }
+
+            }
+        }
+
+        return false;
     }
+
+    /**
+     * Checks for collisions and outputs where the entity should go.
+     * 
+     * @param {[number, number]} potentialPos Position that entity would move to in the case of no collision.
+     * @param {[number, number]} currentPos Current position of entity.
+     * @returns {{position: [number, number], collisionOccured: [boolean, boolean]}}
+     */
+    solveCollision(potentialPos, currentPos){
+
+        let result = {
+            position: potentialPos,
+            collisionOccured: [false, false]
+        }
+
+        
+        //checks for collisions in both directions
+        if(this.checkCollision([potentialPos[0], currentPos[1]])){
+            
+            result.collisionOccured[0] = true;
+
+            if(potentialPos[0] > currentPos[0]){
+                let ceilPos = Math.ceil(currentPos[0])
+                result.position[0] = (this.checkCollision([ceilPos, currentPos[1]])) ? currentPos[0] : ceilPos;
+                
+            }else{
+                let floorPos = Math.floor(currentPos[0]);
+                result.position[0] = (this.checkCollision([floorPos, currentPos[1]])) ? currentPos[0] : floorPos;
+
+            }
+            
+        }
+
+        if(this.checkCollision([currentPos[0], potentialPos[1]])){
+            result.collisionOccured[1] = true;
+            if (potentialPos[1] > currentPos[1]) {
+                let ceilPos = Math.ceil(currentPos[1])
+                result.position[1] = (this.checkCollision([currentPos[0], ceilPos])) ? currentPos[1] : ceilPos;
+            } else {
+                let floorPos = Math.floor(currentPos[1])
+                result.position[1] = (this.checkCollision([currentPos[0], floorPos])) ? currentPos[1] : floorPos;
+            }
+        }
+
+        /**
+         * If this evaluates to true, the player is walking into a corner.
+         * This section will round the player's position in whichever direction it's moving fastest.
+         */
+        if(this.checkCollision(result.position)){
+            // result.position = currentPos;
+
+            if (Math.abs(potentialPos[0] - currentPos[0]) > Math.abs(potentialPos[1] - currentPos[1])){
+                // //move horizontally
+                // if (potentialPos[0] > currentPos[0]) {
+                //     // let ceilPos = Math.ceil(currentPos[0])
+                //     result.position[0] = (this.checkCollision([ceilPos, currentPos[1]])) ? currentPos[0] : ceilPos;
+
+                // } else {
+                //     let floorPos = Math.floor(currentPos[0]);
+                //     result.position[0] = (this.checkCollision([floorPos, currentPos[1]])) ? currentPos[0] : floorPos;
+                // }
+                result.position = [potentialPos[0], currentPos[1]];
+            }else{
+                // if (potentialPos[1] > currentPos[1]) {
+                //     let ceilPos = Math.ceil(currentPos[1])
+                //     result.position[1] = (this.checkCollision([currentPos[0], ceilPos])) ? currentPos[1] : ceilPos;
+                // } else {
+                //     let floorPos = Math.floor(currentPos[1])
+                //     result.position[1] = (this.checkCollision([currentPos[0], floorPos])) ? currentPos[1] : floorPos;
+                // }
+                result.position = [currentPos[0], potentialPos[1]];
+            }
+
+        }
+
+        return result
+    }
+
 }
 
 module.exports = ChunkManager;

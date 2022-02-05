@@ -49,11 +49,12 @@ class Entity{
         if(this.collisionCallback == null){
             this.position = potentialPos;
         }else{
-            if(!this.collisionCallback([potentialPos[0], this.position[1]])){
-                this.position[0] = potentialPos[0];
-            }
-            if (!this.collisionCallback([this.position[0], potentialPos[1]])) {
-                this.position[1] = potentialPos[1];
+            let collisionCheck = this.collisionCallback(potentialPos, this.position); 
+            this.position = collisionCheck.position;
+            for (let i in collisionCheck.collisionOccured){
+                if (collisionCheck.collisionOccured[i]){
+                    this.velocity[i] = 0;
+                }
             }
         }
     }
