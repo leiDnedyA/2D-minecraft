@@ -35,8 +35,6 @@ const getNeighbors = (map, pos) => {
 }
 
 const generateWithWalker = (id, getChunk)=>{
-    
-    console.log(`Chunk being walked...`)
 
     let walkerPos = [32, 32]; //this is where the walker will start, and this var will hold the current walker position
     let stepHistory = [];
