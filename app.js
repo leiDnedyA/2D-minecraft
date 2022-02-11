@@ -58,7 +58,7 @@ const handleNewConnection = (socket)=>{
     let c = new Client(socket, generateUID());
     let id = c.id;
     clients[id] = c;
-    c.createPlayer([Math.random() * 20, Math.random() * 20]);
+    c.createPlayer([32, 32]);
     c.updateChunks();
     chunkManager.addPlayer(c);
 

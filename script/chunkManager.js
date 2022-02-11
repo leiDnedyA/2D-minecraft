@@ -13,10 +13,10 @@ const indexToPos = ChunkMapUtilities.indexToPos;
 // UNCOMMENT ONE OF THESE VVV
  
 // VVV Random noise chunk
-    const newChunk = ChunkGeneration.generateNoise;
+// const newChunk = ChunkGeneration.generateNoise;
 
 // VVV Chunk based on a walker
-// const newChunk = ChunkGeneration.generateWithWalker;
+const newChunk = ChunkGeneration.generateWithWalker;
 
 
 const chunkPosToID = (pos)=>{
