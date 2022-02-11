@@ -1,15 +1,23 @@
 const Chunk = require("./chunk.js");
+const ChunkGeneration = require("./chunkGeneration.js");
 const tileDict = require("./tileDict.json")
+const ChunkMapUtilities = require("./chunkMapUtilities.js");
 
 const chunkStorage = {};
 
-const sampleMap = ()=>{
-    let m = [];
-    for (let i = 0; i < 4096; i++) {
-        m.push((Math.floor(Math.random() * 10) > .5) ? 0 : 1);
-    }
-    return m;
-};
+const chunkDimensions = ChunkMapUtilities.chunkDimensions;
+
+const posToIndex = ChunkMapUtilities.posToIndex;
+const indexToPos = ChunkMapUtilities.indexToPos;
+
+// UNCOMMENT ONE OF THESE VVV
+ 
+// VVV Random noise chunk
+    const newChunk = ChunkGeneration.generateNoise;
+
+// VVV Chunk based on a walker
+// const newChunk = ChunkGeneration.generateWithWalker;
+
 
 const chunkPosToID = (pos)=>{
     return `${pos[0]}x${pos[1]}`;
@@ -47,7 +55,7 @@ class ChunkManager{
         this.solveCollision = this.solveCollision.bind(this);
         
 
-        this.loadedChunks['0x0'] = new Chunk([0, 0], sampleMap(), {}, this);
+        this.loadedChunks['0x0'] = new Chunk([0, 0], newChunk('0x0'), {}, this);
     }
 
     update(deltaTime){
@@ -145,7 +153,7 @@ class ChunkManager{
         let pos = id.split('x').map((v)=>{
             return parseFloat(v);
         }) 
-        return new Chunk(pos, sampleMap(), {}, this);
+        return new Chunk(pos, newChunk(id), {}, this);
     }
 
     generateChunk(){
