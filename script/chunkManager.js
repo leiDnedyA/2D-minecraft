@@ -53,6 +53,7 @@ class ChunkManager{
         this.saveChunk = this.saveChunk.bind(this);
         this.checkCollision = this.checkCollision.bind(this);
         this.solveCollision = this.solveCollision.bind(this);
+        this.handleClick = this.handleClick.bind(this);
         
 
         this.loadedChunks['0x0'] = new Chunk([0, 0], newChunk('0x0'), {}, this);
@@ -101,6 +102,7 @@ class ChunkManager{
             chunk.entityList[client.id] = client.player;
             client.emitChunkData([chunk.getJSON()])
             client.player.setCollisionCallback(this.solveCollision);
+            client.setClickCallback(this.handleClick);
         }
     }
 
@@ -334,6 +336,17 @@ class ChunkManager{
         }
 
         return result
+    }
+
+    /**
+     * Handles clicks/block interactions.
+     * 
+     * @param {Player} player 
+     * @param {boolean} isLeftClick 
+     * @param {[number, number]} pos 
+     */
+    handleClick(player, isLeftClick, pos){
+        
     }
 
 }

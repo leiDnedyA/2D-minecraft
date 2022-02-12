@@ -27,6 +27,20 @@ const update = ()=>{
 socket.on('init', (data)=>{
     clientData.id = data.clientID;
     renderer.setTargetID(clientData.id);
+    
+    let emit = (isLeftClick)=>{
+        socket.emit('clientCick', {isLeftClick: isLeftClick, clickPos: renderer.mouseWorldPos});
+    }
+
+    window.addEventListener('click', (e)=>{
+        emit(false);
+    })
+
+    window.addEventListener('contextmenu', (e)=>{
+        e.preventDefault();
+        emit(true);
+    })
+
 })
 
 socket.on("chunkData", (data)=>{

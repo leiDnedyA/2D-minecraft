@@ -38,7 +38,7 @@ const generateWithWalker = (id, getChunk)=>{
 
     let walkerPos = [32, 32]; //this is where the walker will start, and this var will hold the current walker position
     let stepHistory = [];
-    let maxSteps = 1000000;
+    let maxSteps = 10000;
     let wallsHit = 0;
 
     const move = { //functions to move walker up, down, left, or right
@@ -72,7 +72,7 @@ const generateWithWalker = (id, getChunk)=>{
             wallsHit++;
         }
 
-        if(wallsHit >= 20){
+        if(wallsHit >= 80){
             break;
         }
 

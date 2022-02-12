@@ -22,9 +22,13 @@ class Client {
         this.currentChunkIDs = [];
         this.currentChunkID;
 
+        this.clickCallback = null; //set with setClickCallback
+
         this.createPlayer = this.createPlayer.bind(this);
         this.updateChunks = this.updateChunks.bind(this);
         this.emitChunkData = this.emitChunkData.bind(this);
+        this.setClickCallback = this.setClickCallback.bind(this);
+        this.handleClick = this.handleClick.bind(this);
         // this.emitPlayerData = this.emitPlayerData.bind(this);
     }
 
@@ -73,6 +77,29 @@ class Client {
      */
     emitChunkData(chunks){
         this.socket.emit("chunkData", {chunks: chunks, clientPos: this.player.position});
+    }
+
+    /**
+     * Sets a callback for handling clicks.
+     * 
+     * @callback function handleClick(player, isLeftClick, position) {
+         ...
+     } handle clicks.
+     */
+    setClickCallback(callback){
+        this.clickCallback = callback;
+    }
+
+    /**
+     * Handles clicks/block interactions.
+     * 
+     * @param {boolean} isLeftClick wither or not the click is a left click.
+     * @param {[number, number]} pos world-position of the click
+     */
+    handleClick(isLeftClick, pos){
+        if(this.clickCallback){
+            this.clickCallback(this.player, isLeftClick, pos);
+        }
     }
 }
 

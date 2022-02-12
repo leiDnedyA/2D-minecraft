@@ -25,7 +25,7 @@ const tileDict = {
 
 const chunkDimensions = 64;
 
-const motionBlur = .1;
+const motionBlur = .9;
 
 /**
  * Renders game to canvas.
@@ -62,6 +62,19 @@ class Renderer{
         this.setTargetID = this.setTargetID.bind(this);
         this.cameraOffset = [0, 0];
 
+        this.mousePos = [0, 0];
+        this.mouseWorldPos = [0, 0];
+
+        window.addEventListener('mousemove', (e) => {
+            this.mousePos = [e.offsetX, e.offsetY];
+            this.updateMWP();
+        })
+
+        //updates mouse world pos;
+        this.updateMWP = ()=>{
+            this.mouseWorldPos = [Math.floor((this.mousePos[0] / this.unitSize) - this.cameraOffset[0]), Math.floor((this.mousePos[1] / this.unitSize) - this.cameraOffset[1])];
+        }
+
         this.uiElements = {
             coordinates: {
                 id: 'coordinates',
@@ -85,6 +98,8 @@ class Renderer{
      */
     render(chunks){
         this.clear();
+
+        this.updateMWP();
 
         let entities = [];
         let tileMaps = [];
@@ -125,6 +140,11 @@ class Renderer{
                 this.ctx.fillText(element.text, 5, 25);
             }
         }
+
+        this.ctx.fillStyle = 'red';
+        this.ctx.globalAlpha = .2;
+        this.ctx.fillRect((this.mouseWorldPos[0] + this.cameraOffset[0]) * this.unitSize, (this.mouseWorldPos[1] + this.cameraOffset[1]) * this.unitSize, this.unitSize, this.unitSize);
+        this.ctx.globalAlpha = motionBlur;
     }
 
     /**

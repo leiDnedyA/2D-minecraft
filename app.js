@@ -70,6 +70,15 @@ const handleNewConnection = (socket)=>{
         c.player.charController.setKeysDown(data.keysDown);
     })
 
+    socket.on("clientCick", (data)=>{
+        /**
+         * structure of 'data': {isLeftClick: boolean, clickPos: position of block}
+         */
+
+        c.handleClick(data.isLeftClick, data.clickPos);
+
+    })
+
     socket.on('disconnect', ()=>{
         chunkManager.removePlayer(c);
         delete clients[id];
