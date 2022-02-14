@@ -28,6 +28,7 @@ class Chunk {
 
         this.update = this.update.bind(this);
         this.removeEntity = this.removeEntity.bind(this);
+        this.setBlock = this.setBlock.bind(this);
         this.addEntity = this.addEntity.bind(this);
         this.getShortJSON = this.getShortJSON.bind(this);
         this.getJSON = this.getJSON.bind(this);
@@ -51,6 +52,16 @@ class Chunk {
         }else{
             console.log(`WARNING: removal of entity at chunk [${this.chunkPos[0]}, ${this.chunkPos[1]}] failed because there is no entity with the requested ID`);
         }
+    }
+
+    /**
+     * Changes a certain block.
+     * 
+     * @param {[number, number]} pos position of block within chunk 
+     * @param {number} block block id
+     */
+    setBlock(pos, block){
+        this.tileMap[posToIndex(pos)] = block;
     }
 
     /**

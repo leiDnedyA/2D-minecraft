@@ -25,6 +25,8 @@ const tileDict = {
 
 const chunkDimensions = 64;
 
+const maxReach = 7;
+
 const motionBlur = .9;
 
 /**
@@ -64,6 +66,7 @@ class Renderer{
 
         this.mousePos = [0, 0];
         this.mouseWorldPos = [0, 0];
+        this.targetPos = [0, 0];
 
         window.addEventListener('mousemove', (e) => {
             this.mousePos = [e.offsetX, e.offsetY];
@@ -106,9 +109,10 @@ class Renderer{
 
         for(let i in chunks){
             let c = chunks[i];
-            if(c.entityList.length > 0){
-                entities = entities.concat(c.entityList);
-                
+            if(c.entityList !== null){
+                if(c.entityList.length > 0){
+                    entities = entities.concat(c.entityList);
+                }
             }
             tileMaps.push({tileMap: c.tileMap, chunkPos: c.chunkPos});
         }
@@ -141,7 +145,12 @@ class Renderer{
             }
         }
 
-        this.ctx.fillStyle = 'red';
+        if (Math.abs(this.mouseWorldPos[0] - this.targetPos[0]) < maxReach && Math.abs(this.mouseWorldPos[1] - this.targetPos[1]) < maxReach){
+            this.ctx.fillStyle = 'green';
+        }else{
+            this.ctx.fillStyle = 'red';
+        }
+
         this.ctx.globalAlpha = .2;
         this.ctx.fillRect((this.mouseWorldPos[0] + this.cameraOffset[0]) * this.unitSize, (this.mouseWorldPos[1] + this.cameraOffset[1]) * this.unitSize, this.unitSize, this.unitSize);
         this.ctx.globalAlpha = motionBlur;
@@ -156,11 +165,13 @@ class Renderer{
         if(this.targetID && entities.length > 0){
             if (this.targetID === entities[this.lastTargetIndex].id){
                 targetPos = entities[this.lastTargetIndex].position;
+                this.targetPos = targetPos;
             }else{
                 for(let i in entities){
                     if(entities[i].id === this.targetID){
                         this.lastTargetIndex = i;
                         targetPos = entities[i].position;
+                        this.targetPos = targetPos;
                     }
                 }
             }

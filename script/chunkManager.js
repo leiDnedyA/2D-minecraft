@@ -346,7 +346,28 @@ class ChunkManager{
      * @param {[number, number]} pos 
      */
     handleClick(player, isLeftClick, pos){
-        
+
+        let maxDistance = 7;
+
+        if (Math.abs(player.position[0] - pos[0]) < maxDistance && Math.abs(player.position[1] - pos[1]) < maxDistance  ){
+
+            let chunkID = chunkPosToID([Math.floor(pos[0] / chunkDimensions[0]), Math.floor(pos[1] / chunkDimensions[1])]);
+
+            let chunk = this.loadChunk(chunkID);
+            let subPos = [pos[0] % chunkDimensions[0], pos[1] % chunkDimensions[1]];
+
+            for(let i in subPos){
+                if(subPos[i] < 0){
+                    subPos[i] += chunkDimensions[i];
+                }
+            }
+
+            if(isLeftClick){                
+                chunk.setBlock(subPos, 1)
+            } else {
+                chunk.setBlock(subPos, 0)
+            }
+        }
     }
 
 }

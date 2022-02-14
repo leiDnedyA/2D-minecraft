@@ -13,3 +13,23 @@ canvas, img {
     image-rendering: pixelated;                 /* Awesome future-browsers       */
     -ms-interpolation-mode: nearest-neighbor;   /* IE                            */
 }
+
+table, td{
+    border: 1px solid white;
+    border-collapse: collapse;
+}
+
+.invSlot{
+    width: 25%;
+    font-size: 40px;
+}
+
+#hotbar {
+    position: fixed;
+    bottom: 5%;
+    left: 10%;
+    border: 3px solid white;
+    color: white;
+    width: 80%;
+    background-color: rgba(0, 0, 0, .5);
+}
