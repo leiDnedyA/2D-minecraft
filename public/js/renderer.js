@@ -98,22 +98,17 @@ class Renderer{
     /**
      * Renders.
      * @param {Array<Chunk>} chunks array of chunks to render
+     * @param {Array<Entity>} entities array of entities to render
      */
-    render(chunks){
+    render(chunks, entities){
         this.clear();
 
         this.updateMWP();
 
-        let entities = [];
         let tileMaps = [];
 
         for(let i in chunks){
             let c = chunks[i];
-            if(c.entityList !== null){
-                if(c.entityList.length > 0){
-                    entities = entities.concat(c.entityList);
-                }
-            }
             tileMaps.push({tileMap: c.tileMap, chunkPos: c.chunkPos});
         }
 

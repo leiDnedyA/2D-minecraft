@@ -22,11 +22,14 @@ class Client {
         this.currentChunkIDs = [];
         this.currentChunkID;
 
+        this.currentChunkLastUpdates = {};
+
         this.clickCallback = null; //set with setClickCallback
 
         this.createPlayer = this.createPlayer.bind(this);
         this.updateChunks = this.updateChunks.bind(this);
         this.emitChunkData = this.emitChunkData.bind(this);
+        this.emitEntityData = this.emitEntityData.bind(this);
         this.setClickCallback = this.setClickCallback.bind(this);
         this.handleClick = this.handleClick.bind(this);
         // this.emitPlayerData = this.emitPlayerData.bind(this);
@@ -44,6 +47,7 @@ class Client {
 
     /**
      * Updates the list of current chunk IDs based on player pos.
+     * 
      * @returns {string} the last chunk that the player inhabited
      */
     updateChunks(){
@@ -62,6 +66,29 @@ class Client {
             }
         }
 
+        //sets update timestamps for any freshly loaded chunks
+        for(let i in newChunkIDs){
+            let id = newChunkIDs[i];
+            if(!this.currentChunkLastUpdates.hasOwnProperty(id)){
+                this.currentChunkLastUpdates[id] = Date.now();
+            }
+        }
+
+
+        //filters out chunks that aren't in view anymore from list of update timestamps
+        for(let i in this.currentChunkLastUpdates){
+            let inList = false;
+
+            for(let j in newChunkIDs){
+                if(newChunkIDs[j] === i){
+                    inList = true;
+                }
+            }
+            if(!inList){
+                delete this.currentChunkLastUpdates[i];
+            }
+        }
+
         let lastChunk = this.currentChunkID;
 
         this.currentChunkID = mainID;
@@ -73,10 +100,19 @@ class Client {
     /**
      * Emits data about chunk[s] to client's socket.
      * 
-     * @param {Array<{tileMap: [], chunkPos: []}>} chunks List of data for each chunk that the player has loaded  
+     * @param {Array<{tileMap: [], chunkPos: []}>} chunks List of data for each chunk that the player has loaded 
      */
     emitChunkData(chunks){
-        this.socket.emit("chunkData", {chunks: chunks, clientPos: this.player.position});
+        this.socket.emit("chunkData", {chunks: chunks, currentChunkIDs: this.currentChunkIDs, clientPos: this.player.position});
+    }
+
+    /**
+     * Emits data about visible entities to socket.
+     * 
+     * @param {Array<Entity>} entities list of entities.
+     */
+    emitEntityData(entities){
+        this.socket.emit('entityData', {entities: entities});
     }
 
     /**

@@ -32,6 +32,7 @@ class Chunk {
         this.addEntity = this.addEntity.bind(this);
         this.getShortJSON = this.getShortJSON.bind(this);
         this.getJSON = this.getJSON.bind(this);
+        this.getEntityData = this.getEntityData.bind(this);
         this.getTile = this.getTile.bind(this);
     }
 
@@ -96,12 +97,21 @@ class Chunk {
      * @returns {tileMap: Array<number>, entityList: Array<Entity>, chunkPos: Array<number>} JSON representation of Chunk
      */
     getJSON(){
+        
+        return { tileMap: this.tileMap, chunkPos: this.chunkPos, id: `${this.chunkPos[0]}x${this.chunkPos[1]}`};
+    }
+
+    /**
+     * Returns list of all entity data.
+     * @returns {Array<Entity>}
+     */
+    getEntityData(){
         let eList = [];
-        for(let i in this.entityList){
+        for (let i in this.entityList) {
             let e = this.entityList[i];
-            eList.push({type: e.getType(), position: e.position, id: e.id});
+            eList.push({ type: e.getType(), position: e.position, id: e.id });
         }
-        return { tileMap: this.tileMap, entityList: eList, chunkPos: this.chunkPos };
+        return eList;
     }
 
     /**

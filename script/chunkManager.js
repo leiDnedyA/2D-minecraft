@@ -11,7 +11,7 @@ const posToIndex = ChunkMapUtilities.posToIndex;
 const indexToPos = ChunkMapUtilities.indexToPos;
 
 // UNCOMMENT ONE OF THESE VVV
- 
+
 // VVV Random noise chunk
 // const newChunk = ChunkGeneration.generateNoise;
 
@@ -19,11 +19,11 @@ const indexToPos = ChunkMapUtilities.indexToPos;
 const newChunk = ChunkGeneration.generateWithWalker;
 
 
-const chunkPosToID = (pos)=>{
+const chunkPosToID = (pos) => {
     return `${pos[0]}x${pos[1]}`;
 }
 
-const chunkIDToPos = (id)=>{
+const chunkIDToPos = (id) => {
     return id.split('x').map((v) => {
         return parseFloat(v);
     });
@@ -32,14 +32,15 @@ const chunkIDToPos = (id)=>{
 /**
  * Handles everything to do with chunks.
  */
-class ChunkManager{
-    
+class ChunkManager {
+
     /**
      * Creates an instance of ChunkManager.
      */
-    constructor(){
+    constructor() {
         this.loadedChunks = {};
-        
+        this.loadedChunksLastUpdates = {}; //holds a Date.now() return at each loaded chunk's ID from the last time it was altered or when it was generated.
+
         this.update = this.update.bind(this);
         this.updateClient = this.updateClient.bind(this);
         this.addPlayer = this.addPlayer.bind(this);
@@ -54,13 +55,14 @@ class ChunkManager{
         this.checkCollision = this.checkCollision.bind(this);
         this.solveCollision = this.solveCollision.bind(this);
         this.handleClick = this.handleClick.bind(this);
-        
+
 
         this.loadedChunks['0x0'] = new Chunk([0, 0], newChunk('0x0'), {}, this);
+        this.loadedChunksLastUpdates['0x0'] = Date.now();
     }
 
-    update(deltaTime){
-        for (let i in this.loadedChunks){
+    update(deltaTime) {
+        for (let i in this.loadedChunks) {
             this.loadedChunks[i].update(deltaTime);
         }
     }
@@ -68,26 +70,42 @@ class ChunkManager{
     /**
      * Sends relevant chunk data to client.
      * 
-     * @param {Client} client instance of client to update 
+     * @param {Client} client instance of client to update
+     * @param {boolean} [sendAllChunks=false] true: sends data for all chunks, not just changed chunks
      * @returns {Object} data to send to client
      */
-    updateClient(client){
+    updateClient(client, sendAllChunks = false) {
 
         let lastChunk = client.updateChunks();
 
-        if(lastChunk !== client.currentChunkID){
+        if (lastChunk !== client.currentChunkID) {
             this.switchPlayerChunk(client, lastChunk, client.currentChunkID);
         }
 
         let clientChunkData = [];
+        let entities = [];
 
-        for (let i in client.currentChunkIDs){
-            let id = client.currentChunkIDs[i];
-            // clientChunkData.push(this.loadChunk(id).getShortJSON()); put this back when optomizing
-            clientChunkData.push(this.loadChunk(id).getJSON());
+        if (sendAllChunks) {
+            for (let i in client.currentChunkIDs) {
+                let id = client.currentChunkIDs[i];
+                let c = this.loadChunk(id);
+                clientChunkData.push(c.getJSON());
+                entities.push(...c.getEntityData());
+            }
+        } else {
+            for (let i in client.currentChunkIDs) {
+                let id = client.currentChunkIDs[i];
+                let c = this.loadChunk(id);
+                entities.push(...c.getEntityData());
+                if (client.currentChunkLastUpdates[id] < this.loadedChunksLastUpdates[id] || client.currentChunkLastUpdates[id] == null) {
+                    clientChunkData.push(c.getJSON());
+                    client.currentChunkLastUpdates[id] = Date.now();
+                }
+            }
         }
 
         client.emitChunkData(clientChunkData);
+        client.emitEntityData(entities);
 
     }
 
@@ -96,13 +114,13 @@ class ChunkManager{
      * 
      * @param {Client} client instance of client holding the player and chunk info.
      */
-    addPlayer(client){
-        if(this.loadedChunks.hasOwnProperty(client.currentChunkID)){
+    addPlayer(client) {
+        if (this.loadedChunks.hasOwnProperty(client.currentChunkID)) {
             let chunk = this.loadedChunks[client.currentChunkID];
             chunk.entityList[client.id] = client.player;
-            client.emitChunkData([chunk.getJSON()])
             client.player.setCollisionCallback(this.solveCollision);
             client.setClickCallback(this.handleClick);
+            this.updateClient(client, true);
         }
     }
 
@@ -111,7 +129,7 @@ class ChunkManager{
      * 
      * @param {Client} client instance of client holding the player and chunk info.
      */
-    removePlayer(client){
+    removePlayer(client) {
         if (this.loadedChunks.hasOwnProperty(client.currentChunkID)) {
             let chunk = this.loadedChunks[client.currentChunkID];
             delete chunk.entityList[client.id];
@@ -125,21 +143,21 @@ class ChunkManager{
      * @param {string} lastChunkID id of previous chunk.
      * @param {string} nextChunkID id of next chunk.
      */
-    switchPlayerChunk(client, lastChunkID, nextChunkID){
+    switchPlayerChunk(client, lastChunkID, nextChunkID) {
         // console.log(`Chunk ${nextChunkID} ${(this.checkChunkExists(nextChunkID))? 'exists' : `doesn't exist`}.`);
         let nextChunk = this.loadChunk(nextChunkID);
         let lastChunk = this.loadChunk(lastChunkID);
 
         lastChunk.removeEntity(client.id);
         nextChunk.addEntity(client.player);
-        client.emitChunkData(nextChunk.getJSON());
+        this.updateClient(client, true)
     }
 
-    checkChunkExists(id){
-        if(this.loadedChunks.hasOwnProperty(id)){
+    checkChunkExists(id) {
+        if (this.loadedChunks.hasOwnProperty(id)) {
             return true;
         }
-        if(chunkStorage.hasOwnProperty(id)){ //CHANGE THIS TO CHECK ACTUAL WORLD FILE
+        if (chunkStorage.hasOwnProperty(id)) { //CHANGE THIS TO CHECK ACTUAL WORLD FILE
             return true;
         }
         return false;
@@ -151,14 +169,14 @@ class ChunkManager{
      * @param {string} id chunk ID
      * @returns {Chunk} chunk created.
      */
-    createChunk(id){
-        let pos = id.split('x').map((v)=>{
+    createChunk(id) {
+        let pos = id.split('x').map((v) => {
             return parseFloat(v);
-        }) 
+        })
         return new Chunk(pos, newChunk(id), {}, this);
     }
 
-    generateChunk(){
+    generateChunk() {
 
     }
 
@@ -168,16 +186,18 @@ class ChunkManager{
      * @param {string} id id of requested chunk
      * @returns {Chunk} loaded chunk
      */
-    loadChunk(id){
+    loadChunk(id) {
 
-        if(this.loadedChunks.hasOwnProperty(id)){
+        if (this.loadedChunks.hasOwnProperty(id)) {
             // console.log(`WARNING. Chunk ${id} was attempted to load but was already loaded.`);
             return this.loadedChunks[id];
         }
 
-        if(chunkStorage.hasOwnProperty(id)){
+        this.loadedChunksLastUpdates[id] = Date.now();
+
+        if (chunkStorage.hasOwnProperty(id)) {
             this.loadedChunks[id] = chunkStorage[id];
-        }else{
+        } else {
             let chunk = this.createChunk(id);
             this.saveChunk(chunk, id);
             this.loadedChunks[id] = chunk;
@@ -190,8 +210,8 @@ class ChunkManager{
      * 
      * @param {string} id id of chunk to unload. 
      */
-    unloadChunk(id){
-        if(this.loadedChunks.hasOwnProperty(id)){
+    unloadChunk(id) {
+        if (this.loadedChunks.hasOwnProperty(id)) {
             delete this.loadedChunks[id];
         }
     }
@@ -202,7 +222,7 @@ class ChunkManager{
      * @param {Chunk} chunk chunk to be saved
      * @param {string} id id of chunk
      */
-    saveChunk(chunk, id){
+    saveChunk(chunk, id) {
         //CHANGE TO ACTUALLY STORE IN FILE EVENTUALLY
         chunkStorage[id] = chunk;
     }
@@ -213,13 +233,13 @@ class ChunkManager{
      * @param {[number, number]} position position of tile to check
      * @returns {boolean} true: collision occured
      */
-    checkCollision(position){
-        let chunkPosition = [Math.floor(position[0] / 64), Math.floor(position[1]/64)];
+    checkCollision(position) {
+        let chunkPosition = [Math.floor(position[0] / 64), Math.floor(position[1] / 64)];
         let chunkID = chunkPosToID(chunkPosition);
         let chunk = this.loadChunk(chunkID);
         let subPosition = [position[0] - chunkPosition[0] * 64, position[1] - chunkPosition[1] * 64] //position of tile within chunk
         let tile = chunk.getTile(subPosition);
-        
+
         /**
                  * give represents the 'wiggle room' given to the entity to solve 
                  * the problem of hallways being impossible to go down
@@ -241,8 +261,8 @@ class ChunkManager{
             }
         }
 
-        for(let i in corners){
-            for(let j in corners[i]){
+        for (let i in corners) {
+            for (let j in corners[i]) {
                 let pos = corners[i][j];
 
                 let chunkPosition = [Math.floor(pos[0] / 64), Math.floor(pos[1] / 64)];
@@ -251,7 +271,7 @@ class ChunkManager{
                 let subPosition = [pos[0] - chunkPosition[0] * 64, pos[1] - chunkPosition[1] * 64] //position of tile within chunk
                 let tile = chunk.getTile(subPosition);
 
-                if(tileDict[tile] === 'wall'){
+                if (tileDict[tile] === 'wall') {
                     return true;
                 }
 
@@ -268,32 +288,32 @@ class ChunkManager{
      * @param {[number, number]} currentPos Current position of entity.
      * @returns {{position: [number, number], collisionOccured: [boolean, boolean]}}
      */
-    solveCollision(potentialPos, currentPos){
+    solveCollision(potentialPos, currentPos) {
 
         let result = {
             position: potentialPos,
             collisionOccured: [false, false]
         }
 
-        
+
         //checks for collisions in both directions
-        if(this.checkCollision([potentialPos[0], currentPos[1]])){
-            
+        if (this.checkCollision([potentialPos[0], currentPos[1]])) {
+
             result.collisionOccured[0] = true;
 
-            if(potentialPos[0] > currentPos[0]){
+            if (potentialPos[0] > currentPos[0]) {
                 let ceilPos = Math.ceil(currentPos[0])
                 result.position[0] = (this.checkCollision([ceilPos, currentPos[1]])) ? currentPos[0] : ceilPos;
-                
-            }else{
+
+            } else {
                 let floorPos = Math.floor(currentPos[0]);
                 result.position[0] = (this.checkCollision([floorPos, currentPos[1]])) ? currentPos[0] : floorPos;
 
             }
-            
+
         }
 
-        if(this.checkCollision([currentPos[0], potentialPos[1]])){
+        if (this.checkCollision([currentPos[0], potentialPos[1]])) {
             result.collisionOccured[1] = true;
             if (potentialPos[1] > currentPos[1]) {
                 let ceilPos = Math.ceil(currentPos[1])
@@ -308,10 +328,10 @@ class ChunkManager{
          * If this evaluates to true, the player is walking into a corner.
          * This section will round the player's position in whichever direction it's moving fastest.
          */
-        if(this.checkCollision(result.position)){
+        if (this.checkCollision(result.position)) {
             // result.position = currentPos;
 
-            if (Math.abs(potentialPos[0] - currentPos[0]) > Math.abs(potentialPos[1] - currentPos[1])){
+            if (Math.abs(potentialPos[0] - currentPos[0]) > Math.abs(potentialPos[1] - currentPos[1])) {
                 // //move horizontally
                 // if (potentialPos[0] > currentPos[0]) {
                 //     // let ceilPos = Math.ceil(currentPos[0])
@@ -322,7 +342,7 @@ class ChunkManager{
                 //     result.position[0] = (this.checkCollision([floorPos, currentPos[1]])) ? currentPos[0] : floorPos;
                 // }
                 result.position = [potentialPos[0], currentPos[1]];
-            }else{
+            } else {
                 // if (potentialPos[1] > currentPos[1]) {
                 //     let ceilPos = Math.ceil(currentPos[1])
                 //     result.position[1] = (this.checkCollision([currentPos[0], ceilPos])) ? currentPos[1] : ceilPos;
@@ -345,27 +365,30 @@ class ChunkManager{
      * @param {boolean} isLeftClick 
      * @param {[number, number]} pos 
      */
-    handleClick(player, isLeftClick, pos){
+    handleClick(player, isLeftClick, pos) {
 
         let maxDistance = 7;
 
-        if (Math.abs(player.position[0] - pos[0]) < maxDistance && Math.abs(player.position[1] - pos[1]) < maxDistance  ){
+        if (Math.abs(player.position[0] - pos[0]) < maxDistance && Math.abs(player.position[1] - pos[1]) < maxDistance) {
 
             let chunkID = chunkPosToID([Math.floor(pos[0] / chunkDimensions[0]), Math.floor(pos[1] / chunkDimensions[1])]);
 
             let chunk = this.loadChunk(chunkID);
             let subPos = [pos[0] % chunkDimensions[0], pos[1] % chunkDimensions[1]];
 
-            for(let i in subPos){
-                if(subPos[i] < 0){
+            for (let i in subPos) {
+                if (subPos[i] < 0) {
                     subPos[i] += chunkDimensions[i];
                 }
             }
 
-            if(isLeftClick){                
-                chunk.setBlock(subPos, 1)
-            } else {
-                chunk.setBlock(subPos, 0)
+            if (!(isLeftClick && chunk.getTile(subPos) === 1) && !(!isLeftClick && chunk.getTile(subPos) === 0)) {
+                this.loadedChunksLastUpdates[chunkID] = Date.now();
+                if (isLeftClick) {
+                    chunk.setBlock(subPos, 1)
+                } else {
+                    chunk.setBlock(subPos, 0)
+                }
             }
         }
     }

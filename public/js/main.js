@@ -17,11 +17,11 @@ const clientData = {};
 
 //world variables
 var entities = [];
-var chunks = [];
+var chunks = {};
 
 const update = ()=>{
     deltaTime = Date.now() - deltaTime;
-    renderer.render(chunks);
+    renderer.render(chunks, entities);
 }
 
 socket.on('init', (data)=>{
@@ -44,9 +44,38 @@ socket.on('init', (data)=>{
 })
 
 socket.on("chunkData", (data)=>{
-    chunks = data.chunks;
+    let newIDList = data.currentChunkIDs;
+    let oldIDList = Object.keys(chunks);
+
+    let newChunkData = data.chunks;
+
+    for(let i in oldIDList){
+        let onList = false;
+        let oldID = oldIDList[i];
+        for(let j in newIDList){
+            let newID = newIDList[j];
+            if(oldID === newID){
+                onList = true;
+            }
+        }
+        if(!onList){
+            delete chunks[oldID];
+        }
+    }
+
+    for(let i in newChunkData){
+        let c = newChunkData[i];
+        chunks[c.id] = c;
+    }
+
+    console.log(newChunkData)
+
     clientData.position = data.clientPos;
     renderer.uiElements.coordinates.text = `[${clientData.position[0].toFixed(3)}, ${clientData.position[1].toFixed(3)}]`;
+})
+
+socket.on("entityData", (data)=>{
+    entities = data.entities;
 })
 
 //game loop
