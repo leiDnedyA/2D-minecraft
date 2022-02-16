@@ -54,35 +54,42 @@ const update = ()=>{
 
 }
 
+const justinsIP = '';
+
 const handleNewConnection = (socket)=>{
-    let c = new Client(socket, generateUID());
-    let id = c.id;
-    clients[id] = c;
-    c.createPlayer([32, 32]);
-    c.updateChunks();
-    chunkManager.addPlayer(c);
+    console.log(`${socket.handshake.address} joined at ${Date.now()}`);
+    if(socket.handshake.address !== justinsIP){
 
-    //all socket.on calls
+        let c = new Client(socket, generateUID());
+        let id = c.id;
+        clients[id] = c;
+        c.createPlayer([32, 32]);
+        c.updateChunks();
+        chunkManager.addPlayer(c);
 
-    socket.emit('init', {clientID: id});
+        //all socket.on calls
 
-    socket.on("clientInput", (data)=>{
-        c.player.charController.setKeysDown(data.keysDown);
-    })
+        socket.emit('init', { clientID: id });
 
-    socket.on("clientCick", (data)=>{
-        /**
-         * structure of 'data': {isLeftClick: boolean, clickPos: position of block}
-         */
+        socket.on("clientInput", (data) => {
+            c.player.charController.setKeysDown(data.keysDown);
+        })
 
-        c.handleClick(data.isLeftClick, data.clickPos);
+        socket.on("clientCick", (data) => {
+            /**
+             * structure of 'data': {isLeftClick: boolean, clickPos: position of block}
+             */
 
-    })
+            c.handleClick(data.isLeftClick, data.clickPos);
 
-    socket.on('disconnect', ()=>{
-        chunkManager.removePlayer(c);
-        delete clients[id];
-    })
+        })
+
+        socket.on('disconnect', () => {
+            chunkManager.removePlayer(c);
+            delete clients[id];
+        })
+    }
+    
 }
 
 

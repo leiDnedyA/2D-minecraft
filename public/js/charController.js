@@ -36,15 +36,17 @@ class CharController{
     }
 
     handleKeyDown(e){
-        if(this.keysDown.hasOwnProperty(e.key)){
-            this.keysDown[e.key] = true;
+        let key = e.key.toLowerCase();
+        if(this.keysDown.hasOwnProperty(key)){
+            this.keysDown[key] = true;
             this.emitInput();
         }
     }
 
     handleKeyUp(e){
-        if (this.keysDown.hasOwnProperty(e.key)) {
-            this.keysDown[e.key] = false;
+        let key = e.key.toLowerCase();
+        if (this.keysDown.hasOwnProperty(key)) {
+            this.keysDown[key] = false;
             this.emitInput();
         }
     }
