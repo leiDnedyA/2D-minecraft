@@ -157,13 +157,25 @@ class Renderer{
      */
     cameraUpdate(entities){
         let targetPos = [0, 0];
+        
         if(this.targetID && entities.length > 0){
-            if (this.targetID === entities[this.lastTargetIndex].id){
-                targetPos = entities[this.lastTargetIndex].position;
-                this.targetPos = targetPos;
-            }else{
-                for(let i in entities){
-                    if(entities[i].id === this.targetID){
+            if(entities.length > this.lastTargetIndex){
+                if (this.targetID === entities[this.lastTargetIndex].id) {
+                    targetPos = entities[this.lastTargetIndex].position;
+                    this.targetPos = targetPos;
+                }else{
+                    for (let i in entities) {
+                        if (entities[i].id === this.targetID) {
+                            this.lastTargetIndex = i;
+                            targetPos = entities[i].position;
+                            this.targetPos = targetPos;
+                        }
+                    }
+                }
+            }
+            else{
+                for (let i in entities) {
+                    if (entities[i].id === this.targetID) {
                         this.lastTargetIndex = i;
                         targetPos = entities[i].position;
                         this.targetPos = targetPos;
