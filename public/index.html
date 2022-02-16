@@ -18,7 +18,7 @@
 
     <script>
         let audioStarted = false;
-        window.addEventListener("click", event => {
+        window.addEventListener("keydown", event => {
             if(!audioStarted){
                 const audio = document.querySelector("#audio");
                 audio.volume = 0.2;
