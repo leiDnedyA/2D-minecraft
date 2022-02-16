@@ -68,7 +68,6 @@ socket.on("chunkData", (data)=>{
         chunks[c.id] = c;
     }
 
-    console.log(newChunkData)
 
     clientData.position = data.clientPos;
     renderer.uiElements.coordinates.text = `[${clientData.position[0].toFixed(3)}, ${clientData.position[1].toFixed(3)}]`;

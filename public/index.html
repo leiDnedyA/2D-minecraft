@@ -9,15 +9,26 @@
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
-    
+    <audio id="audio" src="music.wav"></audio>
     <div id="hotbar" class="unclickable">
         <table>
             <!-- <td class="invSlot"><canvas></canvas></td><td class="invSlot"><canvas></canvas></td><td class="invSlot"><canvas></canvas></td><td class="invSlot"><canvas></canvas></td><td class="invSlot"><canvas></canvas></td> -->
         </table>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let audioStarted = false;
+        window.addEventListener("click", event => {
+            if(!audioStarted){
+                const audio = document.querySelector("#audio");
+                audio.volume = 0.2;
+                audio.play();
+            }    
+            
+            });
+    </script>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script src="js/charController.js"></script>
     <script src="js/entity.js"></script>
     <script src="js/renderer.js"></script>
