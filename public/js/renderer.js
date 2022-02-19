@@ -18,10 +18,12 @@ const gameColors = {
     mutedGreen: "#7aa"
 }
 
-const tileDict = {
-    0: gameColors.background,
-    1: gameColors.mutedGreen
-}
+// const tileDict = {
+//     0: gameColors.background,
+//     1: gameColors.mutedGreen,
+//     2: gameColors.red,
+//     3: gameColors.teal,
+// }
 
 const chunkDimensions = 64;
 
@@ -62,6 +64,7 @@ class Renderer{
         this.clear = this.clear.bind(this);
         this.handleResize = this.handleResize.bind(this);
         this.setTargetID = this.setTargetID.bind(this);
+        this.setTileDict = this.setTileDict.bind(this);
         this.cameraOffset = [0, 0];
 
         this.mousePos = [0, 0];
@@ -69,8 +72,10 @@ class Renderer{
         this.targetPos = [0, 0];
 
         window.addEventListener('mousemove', (e) => {
-            this.mousePos = [e.offsetX, e.offsetY];
-            this.updateMWP();
+            if(e.target.nodeName === "CANVAS"){
+                this.mousePos = [e.offsetX, e.offsetY];
+                this.updateMWP();
+            }
         })
 
         //updates mouse world pos;
@@ -120,7 +125,7 @@ class Renderer{
             let map = tileMaps[i].tileMap;
             let offset = [tileMaps[i].chunkPos[0]*64, tileMaps[i].chunkPos[1]*64];
             for(let i in map){
-                this.ctx.fillStyle = tileDict[map[i]];
+                this.ctx.fillStyle = this.tileDict[map[i]].color;
                 this.ctx.fillRect(((Math.floor(i % 64) + offset[0] + this.cameraOffset[0]) * this.unitSize), ((Math.floor(i / 64) + offset[1] + this.cameraOffset[1])*this.unitSize), this.unitSize, this.unitSize);
             }
         }
@@ -204,6 +209,15 @@ class Renderer{
         // let smallestDimension = (this.canvas.width < this.canvas.height) ? this.canvas.width : this.canvas.height;
 
         // this.unitSize = 20;
+    }
+
+    /**
+     * Sets the tileDict, or object containing the color of each tile at a key of its ID.
+     * 
+     * @param {Array<Tile>} tileDict
+     */
+    setTileDict(tileDict){
+        this.tileDict = tileDict;
     }
 
     /**

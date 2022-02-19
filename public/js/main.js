@@ -4,9 +4,13 @@ const socket = io();
 //DOM elements
 const gameCanvas = document.querySelector("#gameCanvas");
 
+//important constants
+const blockDict = {};
+
 //modules
 const renderer = new Renderer(gameCanvas);
 const charController = new CharController(socket, gameCanvas);
+const inventoryController = new InventoryController();
 
 //constant variables
 const fps = 30;
@@ -25,11 +29,30 @@ const update = ()=>{
 }
 
 socket.on('init', (data)=>{
+
+    tileDict = data.tileDict;
+    renderer.setTileDict(tileDict);
+    let inv = [];
+    for(let i in tileDict){
+        inv.push(new Block(tileDict[i].color, i, tileDict[i].collision));
+    }
+
+    inventoryController.setInventory(inv);
+    inventoryController.start();
+
     clientData.id = data.clientID;
     renderer.setTargetID(clientData.id);
-    
-    let emit = (isLeftClick)=>{
-        socket.emit('clientCick', {isLeftClick: isLeftClick, clickPos: renderer.mouseWorldPos});
+    inventoryController.start();
+
+    let emit = (isLeftClick, blockID = 1)=>{
+
+        let data = { isLeftClick: isLeftClick, clickPos: renderer.mouseWorldPos };
+
+        if(isLeftClick){
+            data.blockID = blockID;
+        }
+
+        socket.emit('clientCick', data);
     }
 
     window.addEventListener('click', (e)=>{
@@ -38,7 +61,9 @@ socket.on('init', (data)=>{
 
     window.addEventListener('contextmenu', (e)=>{
         e.preventDefault();
-        emit(true);
+
+        let currentBlock = inventoryController.getCurrentBlockID();
+        emit(true, currentBlock);
     })
 
 })

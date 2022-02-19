@@ -30,6 +30,9 @@ const io = new Socket.Server(server);
 //game modules
 const chunkManager = new ChunkManager();
 
+//JSON configuration stuff
+const tileDict = require("./script/tileDict.json");
+
 //game data
 const clients = {};
 const loadedChunks = {};
@@ -69,7 +72,7 @@ const handleNewConnection = (socket)=>{
 
         //all socket.on calls
 
-        socket.emit('init', { clientID: id });
+        socket.emit('init', { clientID: id , tileDict: tileDict});
 
         socket.on("clientInput", (data) => {
             c.player.charController.setKeysDown(data.keysDown);
@@ -77,10 +80,10 @@ const handleNewConnection = (socket)=>{
 
         socket.on("clientCick", (data) => {
             /**
-             * structure of 'data': {isLeftClick: boolean, clickPos: position of block}
+             * structure of 'data': {isLeftClick: boolean, clickPos: position of block, blockID: id of block being placed}
              */
 
-            c.handleClick(data.isLeftClick, data.clickPos);
+            c.handleClick(data.isLeftClick, data.clickPos, data.blockID);
 
         })
 

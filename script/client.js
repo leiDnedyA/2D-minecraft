@@ -129,12 +129,13 @@ class Client {
     /**
      * Handles clicks/block interactions.
      * 
-     * @param {boolean} isLeftClick wither or not the click is a left click.
+     * @param {boolean} isLeftClick wither or not the click is a left click
      * @param {[number, number]} pos world-position of the click
+     * @param {number} blockID id of block being placed
      */
-    handleClick(isLeftClick, pos){
+    handleClick(isLeftClick, pos, blockID = 1){
         if(this.clickCallback){
-            this.clickCallback(this.player, isLeftClick, pos);
+            this.clickCallback(this.player, isLeftClick, pos, blockID);
         }
     }
 }

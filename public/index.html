@@ -11,25 +11,24 @@
     <canvas id="gameCanvas"></canvas>
     <audio id="audio" src="music.wav"></audio>
     <div id="hotbar" class="unclickable">
-        <table>
-            <!-- <td class="invSlot"><canvas></canvas></td><td class="invSlot"><canvas></canvas></td><td class="invSlot"><canvas></canvas></td><td class="invSlot"><canvas></canvas></td><td class="invSlot"><canvas></canvas></td> -->
-        </table>
+
     </div>
 
     <script>
-        let audioStarted = false;
-        window.addEventListener("keydown", event => {
-            if(!audioStarted){
-                const audio = document.querySelector("#audio");
-                audio.volume = 0.2;
-                audio.play();
-            }    
+        // let audioStarted = false;
+        // window.addEventListener("keydown", event => {
+        //     if(!audioStarted){
+        //         const audio = document.querySelector("#audio");
+        //         audio.volume = 0.2;
+        //         audio.play();
+        //     }    
             
-            });
+        //     });
     </script>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/charController.js"></script>
+    <script src="js/inventory.js"></script>
     <script src="js/entity.js"></script>
     <script src="js/renderer.js"></script>
     <script src="js/main.js"></script>

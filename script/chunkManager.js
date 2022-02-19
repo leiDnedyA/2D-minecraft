@@ -271,7 +271,7 @@ class ChunkManager {
                 let subPosition = [pos[0] - chunkPosition[0] * 64, pos[1] - chunkPosition[1] * 64] //position of tile within chunk
                 let tile = chunk.getTile(subPosition);
 
-                if (tileDict[tile] === 'wall') {
+                if (tileDict[tile].collision === 'wall') {
                     return true;
                 }
 
@@ -364,34 +364,37 @@ class ChunkManager {
      * @param {Player} player 
      * @param {boolean} isLeftClick 
      * @param {[number, number]} pos 
+     * @param {number} blockID
      */
-    handleClick(player, isLeftClick, pos) {
+    handleClick(player, isLeftClick, pos, blockID = 1) {
 
         let maxDistance = 7;
 
-        if (Math.abs(player.position[0] - pos[0]) < maxDistance && Math.abs(player.position[1] - pos[1]) < maxDistance) {
+        if(tileDict.hasOwnProperty(blockID)){
+            if (Math.abs(player.position[0] - pos[0]) < maxDistance && Math.abs(player.position[1] - pos[1]) < maxDistance) {
 
-            let chunkID = chunkPosToID([Math.floor(pos[0] / chunkDimensions[0]), Math.floor(pos[1] / chunkDimensions[1])]);
+                let chunkID = chunkPosToID([Math.floor(pos[0] / chunkDimensions[0]), Math.floor(pos[1] / chunkDimensions[1])]);
 
-            let chunk = this.loadChunk(chunkID);
-            let subPos = [pos[0] % chunkDimensions[0], pos[1] % chunkDimensions[1]];
+                let chunk = this.loadChunk(chunkID);
+                let subPos = [pos[0] % chunkDimensions[0], pos[1] % chunkDimensions[1]];
 
-            for (let i in subPos) {
-                if (subPos[i] < 0) {
-                    subPos[i] += chunkDimensions[i];
+                for (let i in subPos) {
+                    if (subPos[i] < 0) {
+                        subPos[i] += chunkDimensions[i];
+                    }
                 }
-            }
 
-            if (!(isLeftClick && chunk.getTile(subPos) === 1) && !(!isLeftClick && chunk.getTile(subPos) === 0)) {
-                this.loadedChunksLastUpdates[chunkID] = Date.now();
-                if (isLeftClick) {
-                    chunk.setBlock(subPos, 1)
-                } else {
-                    chunk.setBlock(subPos, 0)
+                if (!(isLeftClick && chunk.getTile(subPos) === blockID) && !(!isLeftClick && chunk.getTile(subPos) === 0)) {
+                    this.loadedChunksLastUpdates[chunkID] = Date.now();
+                    if (isLeftClick) {
+                        chunk.setBlock(subPos, blockID)
+                    } else {
+                        chunk.setBlock(subPos, 0)
+                    }
                 }
             }
         }
-    }
+        }
 
 }
 
