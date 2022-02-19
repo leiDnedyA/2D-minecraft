@@ -37,7 +37,7 @@ class InventoryController{
         this.currentSlotIndex = 0;
     
 
-        this.hotbarElement.addEventListener('wheel', (e) => {
+        document.body.addEventListener('wheel', (e) => {
             
             let potentialIndex = this.currentSlotIndex + (e.deltaY / 100);
 
@@ -89,7 +89,11 @@ class InventoryController{
     }
 
     getCurrentBlockID(){
-        return this.inventory[this.currentSlotIndex].id;
+        if(this.inventory.hasOwnProperty(this.currentSlotIndex)){
+            return this.inventory[this.currentSlotIndex].id;
+        }else{
+            return 0;
+        }
     }
 
 }
