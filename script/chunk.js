@@ -114,7 +114,7 @@ class Chunk {
      * @returns {[number, number]} position of tile.
      */
     randomWalkableTile(){
-        let maxAttempts = 100;
+        let maxAttempts = 500;
         for(let i = 0; i < maxAttempts; i++){
             let pos = [getRandomInt(0, dimensions[0]), getRandomInt(0, dimensions[1])];
             if(tileDict[this.getTile(pos)].collision === "floor"){
