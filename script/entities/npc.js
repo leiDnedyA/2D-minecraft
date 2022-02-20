@@ -25,7 +25,7 @@ class NPC extends Entity{
      */
     update(deltaTime){
         if(Math.random() > .95){
-            this.velocity[(Math.random() > .5) ? 0 : 1] = Math.random();
+            this.velocity[(Math.random() > .5) ? 0 : 1] = (Math.random() - .5) * 2;
         }
         super.update(deltaTime);
     }
