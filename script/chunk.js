@@ -1,9 +1,24 @@
 
 const dimensions = [64, 64];
 
+const getRandomInt = require('./numUtilities').getRandomInt;
+
 const posToIndex = (position) => {
     return Math.floor(position[1] * dimensions[0]) + Math.floor(position[0])
 }
+
+/**
+ * Converts a sub-chunk pos into a global position based on the chunkPos (position of the chunk relative to other chunks)
+ * 
+ * @param {[number, number]} subPos 
+ * @param {[number, number]} chunkPos 
+ * @returns {[number, number]} worldPos
+ */
+const getWorldPos = (subPos, chunkPos)=>{
+    return [subPos[0] + (chunkPos[0] * dimensions[0]), subPos[1] + (chunkPos[1] * dimensions[1])];
+}
+
+const tileDict = require('./tileDict.json');
 
 /**
  * Holds information about and handles events within an individual chunk.
@@ -31,6 +46,7 @@ class Chunk {
         this.setBlock = this.setBlock.bind(this);
         this.addEntity = this.addEntity.bind(this);
         this.getShortJSON = this.getShortJSON.bind(this);
+        this.randomWalkableTile = this.randomWalkableTile.bind(this);
         this.getJSON = this.getJSON.bind(this);
         this.getEntityData = this.getEntityData.bind(this);
         this.getTile = this.getTile.bind(this);
@@ -90,6 +106,22 @@ class Chunk {
         }
         return { mapChanges: [], entityList: eList, chunkPos: this.chunkPos };
         
+    }
+
+    /**
+     * Returns a random walkable tile from the chunk. If no walkable tile is found, it will return position [0, 0].
+     * 
+     * @returns {[number, number]} position of tile.
+     */
+    randomWalkableTile(){
+        let maxAttempts = 100;
+        for(let i = 0; i < maxAttempts; i++){
+            let pos = [getRandomInt(0, dimensions[0]), getRandomInt(0, dimensions[1])];
+            if(tileDict[this.getTile(pos)].collision === "floor"){
+                return getWorldPos(pos, this.chunkPos);
+            }
+        }
+        return getWorldPos([0, 0], this.chunkPos);
     }
 
     /**

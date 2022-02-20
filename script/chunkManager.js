@@ -2,6 +2,7 @@ const Chunk = require("./chunk.js");
 const ChunkGeneration = require("./chunkGeneration.js");
 const tileDict = require("./tileDict.json")
 const ChunkMapUtilities = require("./chunkMapUtilities.js");
+const NPC = require("./entities/npc.js");
 
 const chunkStorage = {};
 
@@ -29,6 +30,10 @@ const chunkIDToPos = (id) => {
     });
 }
 
+const getChunkPos = (pos) =>{
+    return [Math.floor(pos[0]/64), Math.floor(pos[1]/64)];
+}
+
 /**
  * Handles everything to do with chunks.
  */
@@ -41,9 +46,12 @@ class ChunkManager {
         this.loadedChunks = {};
         this.loadedChunksLastUpdates = {}; //holds a Date.now() return at each loaded chunk's ID from the last time it was altered or when it was generated.
 
+        this.globalEntities = {};
+
         this.update = this.update.bind(this);
         this.updateClient = this.updateClient.bind(this);
         this.addPlayer = this.addPlayer.bind(this);
+        this.addEntity = this.addEntity.bind(this);
         this.switchPlayerChunk = this.switchPlayerChunk.bind(this);
         this.removePlayer = this.removePlayer.bind(this);
         this.checkChunkExists = this.checkChunkExists.bind(this);
@@ -59,6 +67,12 @@ class ChunkManager {
 
         this.loadedChunks['0x0'] = new Chunk([0, 0], newChunk('0x0'), {}, this);
         this.loadedChunksLastUpdates['0x0'] = Date.now();
+
+        let testNPC = new NPC('420', this.loadedChunks['0x0'].randomWalkableTile(), 'swagboi_1337');
+
+        this.globalEntities[testNPC.id] = testNPC;
+
+        this.addEntity(testNPC);
     }
 
     update(deltaTime) {
@@ -117,11 +131,27 @@ class ChunkManager {
     addPlayer(client) {
         if (this.loadedChunks.hasOwnProperty(client.currentChunkID)) {
             let chunk = this.loadedChunks[client.currentChunkID];
-            chunk.entityList[client.id] = client.player;
+            chunk.addEntity(client.player);
             client.player.setCollisionCallback(this.solveCollision);
             client.setClickCallback(this.handleClick);
             this.updateClient(client, true);
         }
+    }
+
+    /**
+     * Adds an entity to chunk based on entity's position.
+     * 
+     * 
+     * @param {Entity} entity 
+     */
+    addEntity(entity){
+        let chunkID = chunkPosToID(getChunkPos(entity.position));
+        entity.setCollisionCallback(this.solveCollision);
+        this.loadChunk(chunkID).addEntity(entity);
+    }
+
+    removeEntity(id, chunkID){
+        this.loadChunk(chunkID).removeEntity(id);
     }
 
     /**

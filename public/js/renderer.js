@@ -18,6 +18,11 @@ const gameColors = {
     mutedGreen: "#7aa"
 }
 
+const entityColorDict = {
+    Player: gameColors.red,
+    NPC: 'orange'
+}
+
 // const tileDict = {
 //     0: gameColors.background,
 //     1: gameColors.mutedGreen,
@@ -130,9 +135,9 @@ class Renderer{
             }
         }
 
-        this.ctx.fillStyle = gameColors.red;
         for(let i in entities){
             let e = entities[i];
+            this.ctx.fillStyle = entityColorDict[e.type];
             this.ctx.fillRect((e.position[0] + this.cameraOffset[0]) * this.unitSize, (e.position[1] + this.cameraOffset[1]) * this.unitSize, this.unitSize, this.unitSize);
         }
 

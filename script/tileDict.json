@@ -8,15 +8,15 @@
         "color": "#7aa"
     },
     "2": {
-        "collision": "floor",
-        "color": "#db2e2e"
+        "collision": "wall",
+        "color": "#ff2e2e"
     },
     "3": {
-        "collision": "floor",
+        "collision": "wall",
         "color": "#41c2b4"
     },
     "4": {
-        "collision": "wall",
-        "color": "#8B0000"
+        "collision": "floor",
+        "color": "#550000"
     }
 }

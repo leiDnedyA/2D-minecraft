@@ -4,11 +4,7 @@ const chunkDimensions = ChunkMapUtilities.chunkDimensions;
 const posToIndex = ChunkMapUtilities.posToIndex;
 const indexToPos = ChunkMapUtilities.indexToPos;
 
-const getRandomInt = (min, max)=>{
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1) + min);
-}
+const getRandomInt = require('./numUtilities').getRandomInt;
 
 /**
  * Returns a list of the tiles surrounding a specified tile in a chunk.
