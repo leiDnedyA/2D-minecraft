@@ -1,16 +1,7 @@
 require("dotenv").config()
 
 //helper functions
-
-/**
- * Generates a unique id string based on timestamp.
- * 
- * @param {number} length length of ID
- * @returns {string} UID
- */
-const generateUID = (length = 16) => {
-    return parseInt(Math.ceil(Math.random() * Date.now()).toPrecision(length).toString().replace(".", ""))
-}
+const generateUID = require('./script/uidTools.js').generateUID;
 
 //game component imports
 const Client = require("./script/client.js");

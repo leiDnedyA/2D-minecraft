@@ -2,6 +2,7 @@ const Chunk = require("./chunk.js");
 const ChunkGeneration = require("./chunkGeneration.js");
 const tileDict = require("./tileDict.json")
 const ChunkMapUtilities = require("./chunkMapUtilities.js");
+const EntitySpawner = require("./entitySpawner.js");
 const NPC = require("./entities/npc.js");
 
 const chunkStorage = {};
@@ -64,6 +65,7 @@ class ChunkManager {
         this.solveCollision = this.solveCollision.bind(this);
         this.handleClick = this.handleClick.bind(this);
 
+        this.entitySpawner = new EntitySpawner(this.addEntity, this.removeEntity, this.loadedChunks);
 
         this.loadedChunks['0x0'] = new Chunk([0, 0], newChunk('0x0'), {}, this);
         this.loadedChunksLastUpdates['0x0'] = Date.now();
@@ -76,6 +78,8 @@ class ChunkManager {
     }
 
     update(deltaTime) {
+        this.entitySpawner.update(deltaTime);
+        
         for (let i in this.loadedChunks) {
             this.loadedChunks[i].update(deltaTime);
         }
