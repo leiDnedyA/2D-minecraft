@@ -2,9 +2,13 @@ const mongoose = require("mongoose");
 
 const chunkSchema = new mongoose.Schema({
     chunkID: String,
-    tiles: {
+    tileMap: {
         type: [Number],
         validate: (arr)=>{return (arr.length === 64*64)}
+    },
+    chunkPos: {
+        type: [Number],
+        validate: (arr)=>{return arr.length = 2}
     }
 })
 

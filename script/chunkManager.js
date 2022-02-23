@@ -46,6 +46,7 @@ class ChunkManager {
      */
     constructor() {
         this.loadedChunks = {};
+        this.processedChunks = {}; //holds a boolean at a key of every object that's had its loading started.
         this.loadedChunksLastUpdates = {}; //holds a Date.now() return at each loaded chunk's ID from the last time it was altered or when it was generated.
 
         this.globalEntities = {};
@@ -69,16 +70,9 @@ class ChunkManager {
         this.handleClick = this.handleClick.bind(this);
 
         this.entitySpawner = new EntitySpawner(this.addEntity, this.removeEntity, this.loadedChunks);
-        this.databaseManager = new DatabaseManager();
+        this.databaseManager = new DatabaseManager(this);
 
-        this.loadedChunks['0x0'] = new Chunk([0, 0], newChunk('0x0'), {}, this);
-        this.loadedChunksLastUpdates['0x0'] = Date.now();
-
-        let testNPC = new NPC('420', this.loadedChunks['0x0'].randomWalkableTile(), 'swagboi_1337');
-
-        this.globalEntities[testNPC.id] = testNPC;
-
-        this.addEntity(testNPC);
+        this.loadChunk('0x0');
     }
 
     update(deltaTime) {
@@ -155,6 +149,8 @@ class ChunkManager {
 
         client.emitChunkData(clientChunkData);
         client.emitEntityData(entities);
+
+        return finished;
 
     }
 
@@ -266,22 +262,20 @@ class ChunkManager {
      * Loads a chunk.
      * 
      * @param {string} id id of requested chunk
-     * @param {function} chunkOperationCallback operation done on chunk once loaded
-     * @returns {Chunk} loaded chunk
+     * @param {function} callback called after chunk is loaded
      */
-    loadChunk(id, chunkOperationCallback) {
+    loadChunk(id, callback) {
 
-        if (this.loadedChunks.hasOwnProperty(id)) return;
 
-        if (chunkStorage.hasOwnProperty(id)) {
-            this.loadedChunks[id] = chunkStorage[id];
-        } else {
-            let chunk = this.createChunk(id);
-            this.loadedChunks[id] = chunk;
+        if (this.loadedChunks.hasOwnProperty(id) || this.processedChunks.hasOwnProperty(id)) return;
 
-            this.loadedChunksLastUpdates[id] = Date.now();
+        this.processedChunks[id] = true;
 
-        }
+        this.databaseManager.loadOrCreateChunk(id, (chunk) => { this.loadedChunks[id] = chunk }, this.createChunk, callback);
+
+        this.loadedChunksLastUpdates[id] = Date.now();
+
+
     }
 
     /**
@@ -453,6 +447,7 @@ class ChunkManager {
                 let chunkID = chunkPosToID([Math.floor(pos[0] / chunkDimensions[0]), Math.floor(pos[1] / chunkDimensions[1])]);
 
                 if(this.loadedChunks.hasOwnProperty(chunkID)){
+
                     let chunk = this.loadedChunks[chunkID];
                     let subPos = [pos[0] % chunkDimensions[0], pos[1] % chunkDimensions[1]];
 
@@ -464,10 +459,19 @@ class ChunkManager {
 
                     if (!(isLeftClick && chunk.getTile(subPos) === blockID) && !(!isLeftClick && chunk.getTile(subPos) === 0)) {
                         this.loadedChunksLastUpdates[chunkID] = Date.now();
+
+                        let changed = false;
+
                         if (isLeftClick) {
                             chunk.setBlock(subPos, blockID)
+                            changed = true;
                         } else {
                             chunk.setBlock(subPos, 0)
+                            changed = true;
+                        }
+
+                        if(changed){
+                            this.databaseManager.updateChunk(chunk);
                         }
                     }
                 }
