@@ -50,6 +50,7 @@ class Chunk {
         this.getJSON = this.getJSON.bind(this);
         this.getEntityData = this.getEntityData.bind(this);
         this.getTile = this.getTile.bind(this);
+        this.getChunkID = this.getChunkID.bind(this);
     }
 
     update(deltaTime){
@@ -153,6 +154,13 @@ class Chunk {
      */
     getTile(position){
         return this.tileMap[posToIndex([Math.floor(position[0]), Math.floor(position[1])])];
+    }
+
+    /**
+     * Returns the chunkID for chunk instance.
+     */
+    getChunkID(){
+        return `${this.chunkPos[0]}x${this.chunkPos[1]}`
     }
 }
 

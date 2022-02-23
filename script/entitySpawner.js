@@ -47,7 +47,6 @@ class EntitySpawner{
                 let worldPos = chunk.randomWalkableTile();
                 let entity = new NPC(generateUID(), worldPos, 'npc')
                 this.addEntity(entity);
-                console.log(worldPos);
             }
 
         }

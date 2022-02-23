@@ -4,6 +4,7 @@ const tileDict = require("./tileDict.json")
 const ChunkMapUtilities = require("./chunkMapUtilities.js");
 const EntitySpawner = require("./entitySpawner.js");
 const NPC = require("./entities/npc.js");
+const DatabaseManager = require("./databaseManager");
 
 const chunkStorage = {};
 
@@ -45,9 +46,13 @@ class ChunkManager {
      */
     constructor() {
         this.loadedChunks = {};
+        this.processedChunks = {}; //holds a boolean at a key of every object that's had its loading started.
         this.loadedChunksLastUpdates = {}; //holds a Date.now() return at each loaded chunk's ID from the last time it was altered or when it was generated.
 
         this.globalEntities = {};
+
+        this.clientsToUpdate = []; //clients awaiting chunk loading
+        this.entitiesToAdd = []; //entities awaiting chunk loading
 
         this.update = this.update.bind(this);
         this.updateClient = this.updateClient.bind(this);
@@ -60,21 +65,14 @@ class ChunkManager {
         this.generateChunk = this.generateChunk.bind(this);
         this.loadChunk = this.loadChunk.bind(this);
         this.unloadChunk = this.unloadChunk.bind(this);
-        this.saveChunk = this.saveChunk.bind(this);
         this.checkCollision = this.checkCollision.bind(this);
         this.solveCollision = this.solveCollision.bind(this);
         this.handleClick = this.handleClick.bind(this);
 
         this.entitySpawner = new EntitySpawner(this.addEntity, this.removeEntity, this.loadedChunks);
+        this.databaseManager = new DatabaseManager(this);
 
-        this.loadedChunks['0x0'] = new Chunk([0, 0], newChunk('0x0'), {}, this);
-        this.loadedChunksLastUpdates['0x0'] = Date.now();
-
-        let testNPC = new NPC('420', this.loadedChunks['0x0'].randomWalkableTile(), 'swagboi_1337');
-
-        this.globalEntities[testNPC.id] = testNPC;
-
-        this.addEntity(testNPC);
+        this.loadChunk('0x0');
     }
 
     update(deltaTime) {
@@ -83,6 +81,21 @@ class ChunkManager {
         for (let i in this.loadedChunks) {
             this.loadedChunks[i].update(deltaTime);
         }
+
+        for(let i in this.clientsToUpdate){
+            let finished = this.updateClient(this.clientsToUpdate[i], true);
+            if(finished){
+                this.clientsToUpdate.splice(i, 1);
+            }
+        }
+
+        for(let i in this.entitiesToAdd){
+            let finished = this.addEntity(this.entitiesToAdd[i]);
+            if(finished){
+                this.entitiesToAdd.splice(i, 1);
+            }
+        }
+
     }
 
     /**
@@ -90,7 +103,7 @@ class ChunkManager {
      * 
      * @param {Client} client instance of client to update
      * @param {boolean} [sendAllChunks=false] true: sends data for all chunks, not just changed chunks
-     * @returns {Object} data to send to client
+     * @returns {Boolean} whether or not all chunks could be sent to client
      */
     updateClient(client, sendAllChunks = false) {
 
@@ -103,27 +116,41 @@ class ChunkManager {
         let clientChunkData = [];
         let entities = [];
 
+        let finished = true;
+
         if (sendAllChunks) {
             for (let i in client.currentChunkIDs) {
                 let id = client.currentChunkIDs[i];
-                let c = this.loadChunk(id);
-                clientChunkData.push(c.getJSON());
-                entities.push(...c.getEntityData());
+                if(this.loadedChunks.hasOwnProperty(id)){
+                    let c = this.loadedChunks[id];
+                    clientChunkData.push(c.getJSON());
+                    entities.push(...c.getEntityData());
+                }else{
+                    this.loadChunk(id);
+                    finished = false;
+                }
             }
         } else {
             for (let i in client.currentChunkIDs) {
                 let id = client.currentChunkIDs[i];
-                let c = this.loadChunk(id);
-                entities.push(...c.getEntityData());
-                if (client.currentChunkLastUpdates[id] < this.loadedChunksLastUpdates[id] || client.currentChunkLastUpdates[id] == null) {
-                    clientChunkData.push(c.getJSON());
-                    client.currentChunkLastUpdates[id] = Date.now();
+                if(this.loadedChunks.hasOwnProperty(id)){
+                    let c = this.loadedChunks[id];
+                    entities.push(...c.getEntityData());
+                    if (client.currentChunkLastUpdates[id] < this.loadedChunksLastUpdates[id] || client.currentChunkLastUpdates[id] == null) {
+                        clientChunkData.push(c.getJSON());
+                        client.currentChunkLastUpdates[id] = Date.now();
+                    }
+                }else{
+                    this.loadChunk(id);
+                    finished = false;
                 }
             }
         }
 
         client.emitChunkData(clientChunkData);
         client.emitEntityData(entities);
+
+        return finished;
 
     }
 
@@ -138,7 +165,10 @@ class ChunkManager {
             chunk.addEntity(client.player);
             client.player.setCollisionCallback(this.solveCollision);
             client.setClickCallback(this.handleClick);
-            this.updateClient(client, true);
+            let updated = this.updateClient(client, true);
+            if(!updated){
+                this.clientsToUpdate.push(client);
+            }
         }
     }
 
@@ -147,15 +177,26 @@ class ChunkManager {
      * 
      * 
      * @param {Entity} entity 
+     * @returns {Boolean} whether or not the action finished
      */
     addEntity(entity){
         let chunkID = chunkPosToID(getChunkPos(entity.position));
-        entity.setCollisionCallback(this.solveCollision);
-        this.loadChunk(chunkID).addEntity(entity);
+
+        if(this.loadedChunks.hasOwnProperty(chunkID)){
+            entity.setCollisionCallback(this.solveCollision);
+            this.loadedChunks[chunkID].addEntity(entity);
+            return true;
+        }else{
+            this.loadChunk(chunkID);
+            this.entitiesToAdd.push(entity);
+            return false;
+        }
     }
 
     removeEntity(id, chunkID){
-        this.loadChunk(chunkID).removeEntity(id);
+        if(this.loadedChunks.hasOwnProperty(chunkID)){
+            this.loadedChunks[chunkID].removeEntity(id);
+        }
     }
 
     /**
@@ -179,12 +220,15 @@ class ChunkManager {
      */
     switchPlayerChunk(client, lastChunkID, nextChunkID) {
         // console.log(`Chunk ${nextChunkID} ${(this.checkChunkExists(nextChunkID))? 'exists' : `doesn't exist`}.`);
-        let nextChunk = this.loadChunk(nextChunkID);
-        let lastChunk = this.loadChunk(lastChunkID);
+        let nextChunk = this.loadedChunks[nextChunkID];
+        let lastChunk = this.loadedChunks[lastChunkID];
 
         lastChunk.removeEntity(client.id);
         nextChunk.addEntity(client.player);
-        this.updateClient(client, true)
+        let updated = this.updateClient(client, true);
+        if (!updated) {
+            this.clientsToUpdate.push(client);
+        }
     }
 
     checkChunkExists(id) {
@@ -218,25 +262,20 @@ class ChunkManager {
      * Loads a chunk.
      * 
      * @param {string} id id of requested chunk
-     * @returns {Chunk} loaded chunk
+     * @param {function} callback called after chunk is loaded
      */
-    loadChunk(id) {
+    loadChunk(id, callback) {
 
-        if (this.loadedChunks.hasOwnProperty(id)) {
-            // console.log(`WARNING. Chunk ${id} was attempted to load but was already loaded.`);
-            return this.loadedChunks[id];
-        }
+
+        if (this.loadedChunks.hasOwnProperty(id) || this.processedChunks.hasOwnProperty(id)) return;
+
+        this.processedChunks[id] = true;
+
+        this.databaseManager.loadOrCreateChunk(id, (chunk) => { this.loadedChunks[id] = chunk }, this.createChunk, callback);
 
         this.loadedChunksLastUpdates[id] = Date.now();
 
-        if (chunkStorage.hasOwnProperty(id)) {
-            this.loadedChunks[id] = chunkStorage[id];
-        } else {
-            let chunk = this.createChunk(id);
-            this.saveChunk(chunk, id);
-            this.loadedChunks[id] = chunk;
-        }
-        return this.loadedChunks[id];
+
     }
 
     /**
@@ -251,17 +290,6 @@ class ChunkManager {
     }
 
     /**
-     * Saves a chunk.
-     * 
-     * @param {Chunk} chunk chunk to be saved
-     * @param {string} id id of chunk
-     */
-    saveChunk(chunk, id) {
-        //CHANGE TO ACTUALLY STORE IN FILE EVENTUALLY
-        chunkStorage[id] = chunk;
-    }
-
-    /**
      * [USE solveCollision] Checks whether a tile will cause a collision based on global position.
      * 
      * @param {[number, number]} position position of tile to check
@@ -270,45 +298,54 @@ class ChunkManager {
     checkCollision(position) {
         let chunkPosition = [Math.floor(position[0] / 64), Math.floor(position[1] / 64)];
         let chunkID = chunkPosToID(chunkPosition);
-        let chunk = this.loadChunk(chunkID);
-        let subPosition = [position[0] - chunkPosition[0] * 64, position[1] - chunkPosition[1] * 64] //position of tile within chunk
-        let tile = chunk.getTile(subPosition);
+        
+        if(this.loadedChunks.hasOwnProperty(chunkID)){
 
-        /**
-                 * give represents the 'wiggle room' given to the entity to solve 
-                 * the problem of hallways being impossible to go down
-                 */
-        let give = .07;
+            let chunk = this.loadedChunks[chunkID];
 
-        let floorGive = num => (Math.floor(num + give))
-        let ceilGive = num => (Math.ceil(num - give));
+            let subPosition = [position[0] - chunkPosition[0] * 64, position[1] - chunkPosition[1] * 64] //position of tile within chunk
+            let tile = chunk.getTile(subPosition);
 
-        //represents which tile each corner of a 1x1 entity at the position parameter will be in
-        let corners = {
-            'top': {
-                'left': [floorGive(position[0]), floorGive(position[1])],
-                'right': [ceilGive(position[0]), floorGive(position[1])]
-            },
-            'bottom': {
-                left: [floorGive(position[0]), ceilGive(position[1])],
-                right: [ceilGive(position[0]), ceilGive(position[1])]
-            }
-        }
+            /**
+                     * give represents the 'wiggle room' given to the entity to solve 
+                     * the problem of hallways being impossible to go down
+                     */
+            let give = .07;
 
-        for (let i in corners) {
-            for (let j in corners[i]) {
-                let pos = corners[i][j];
+            let floorGive = num => (Math.floor(num + give))
+            let ceilGive = num => (Math.ceil(num - give));
 
-                let chunkPosition = [Math.floor(pos[0] / 64), Math.floor(pos[1] / 64)];
-                let chunkID = chunkPosToID(chunkPosition);
-                let chunk = this.loadChunk(chunkID);
-                let subPosition = [pos[0] - chunkPosition[0] * 64, pos[1] - chunkPosition[1] * 64] //position of tile within chunk
-                let tile = chunk.getTile(subPosition);
-
-                if (tileDict[tile].collision === 'wall') {
-                    return true;
+            //represents which tile each corner of a 1x1 entity at the position parameter will be in
+            let corners = {
+                'top': {
+                    'left': [floorGive(position[0]), floorGive(position[1])],
+                    'right': [ceilGive(position[0]), floorGive(position[1])]
+                },
+                'bottom': {
+                    left: [floorGive(position[0]), ceilGive(position[1])],
+                    right: [ceilGive(position[0]), ceilGive(position[1])]
                 }
+            }
 
+            for (let i in corners) {
+                for (let j in corners[i]) {
+                    let pos = corners[i][j];
+
+                    let chunkPosition = [Math.floor(pos[0] / 64), Math.floor(pos[1] / 64)];
+                    let chunkID = chunkPosToID(chunkPosition);
+                    if (this.loadedChunks.hasOwnProperty(chunkID)) {
+                        let chunk = this.loadedChunks[chunkID];
+                        let subPosition = [pos[0] - chunkPosition[0] * 64, pos[1] - chunkPosition[1] * 64] //position of tile within chunk
+                        let tile = chunk.getTile(subPosition);
+
+                        if (tileDict[tile].collision === 'wall') {
+                            return true;
+                        }
+                    } else {
+                        return false;
+                    }
+
+                }
             }
         }
 
@@ -409,21 +446,33 @@ class ChunkManager {
 
                 let chunkID = chunkPosToID([Math.floor(pos[0] / chunkDimensions[0]), Math.floor(pos[1] / chunkDimensions[1])]);
 
-                let chunk = this.loadChunk(chunkID);
-                let subPos = [pos[0] % chunkDimensions[0], pos[1] % chunkDimensions[1]];
+                if(this.loadedChunks.hasOwnProperty(chunkID)){
 
-                for (let i in subPos) {
-                    if (subPos[i] < 0) {
-                        subPos[i] += chunkDimensions[i];
+                    let chunk = this.loadedChunks[chunkID];
+                    let subPos = [pos[0] % chunkDimensions[0], pos[1] % chunkDimensions[1]];
+
+                    for (let i in subPos) {
+                        if (subPos[i] < 0) {
+                            subPos[i] += chunkDimensions[i];
+                        }
                     }
-                }
 
-                if (!(isLeftClick && chunk.getTile(subPos) === blockID) && !(!isLeftClick && chunk.getTile(subPos) === 0)) {
-                    this.loadedChunksLastUpdates[chunkID] = Date.now();
-                    if (isLeftClick) {
-                        chunk.setBlock(subPos, blockID)
-                    } else {
-                        chunk.setBlock(subPos, 0)
+                    if (!(isLeftClick && chunk.getTile(subPos) === blockID) && !(!isLeftClick && chunk.getTile(subPos) === 0)) {
+                        this.loadedChunksLastUpdates[chunkID] = Date.now();
+
+                        let changed = false;
+
+                        if (isLeftClick) {
+                            chunk.setBlock(subPos, blockID)
+                            changed = true;
+                        } else {
+                            chunk.setBlock(subPos, 0)
+                            changed = true;
+                        }
+
+                        if(changed){
+                            this.databaseManager.updateChunk(chunk);
+                        }
                     }
                 }
             }
