@@ -30,14 +30,16 @@ class Chunk {
      * 
      * @param {[number, number]} chunkPos NOT WORLD POS, position relative to other chunks 
      * @param {Array<number>} tileMap tilemap with width and height assumed to be 64 
-     * @param {Object<Entity>} entityList list of entities within the chunk
+     * @param {Object<Entity>} savedEntityList list of non-despawnable entities within the chunk
      * @param {ChunkManager} manager instance of chunk manager for callback purposes
      * 
      */
-    constructor(chunkPos, tileMap, entityList, manager){
+    constructor(chunkPos, tileMap, savedEntityList, manager, entityList = {}){
         this.chunkPos = chunkPos;
         this.tileMap = tileMap;
+        this.savedEntityList = savedEntityList;
         this.entityList = entityList;
+        this.savedEntityList = {};
         this.manager = manager;
         this.lastJSON = {};
 

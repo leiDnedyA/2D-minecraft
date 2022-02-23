@@ -1,7 +1,13 @@
 
+const chunkMapUtilities = require('./chunkMapUtilities.js')
+
+const worldPosToChunkID = chunkMapUtilities.worldPosToChunkID;
+
 const lerp = (start, end, amt)=>{
     return (1-amt)*start+amt*end;
 }
+
+
 
 /**
  * The base of all Entities in the Entity Component System.
@@ -23,6 +29,7 @@ class Entity{
         this.velocityMultiplier = .5;
 
         this.collisionCallback;
+        this.chunkSwitchCallback;
 
         this.update = this.update.bind(this);
         this.getType = this.getType.bind(this);
@@ -39,6 +46,8 @@ class Entity{
         }
 
         let potentialPos = [0, 0]
+        let startPos = this.position;
+        let startChunkID = worldPosToChunkID(this.position);
 
         //eventually replace this part
         for (let i in potentialPos) {
@@ -57,6 +66,13 @@ class Entity{
                 }
             }
         }
+
+        let endChunkID = worldPosToChunkID(this.position);
+
+        if(startChunkID !== endChunkID && this.entityType !== "Player" && this.chunkSwitchCallback != null){
+            this.chunkSwitchCallback(this, startChunkID, endChunkID, startPos);
+        }
+
     }
 
     /**
@@ -87,7 +103,7 @@ class Entity{
     }
 
     /**
-     * Checks whether or not a speicified tile will result ina collision.
+     * Checks whether or not a speicified tile will result in collision.
      * e.g function callback(position){
      *  return //true = don't walk, false = walk
      * }
@@ -96,6 +112,19 @@ class Entity{
      */
     setCollisionCallback(c){
         this.collisionCallback = c;
+    }
+
+    /**
+     * Sets callback for when entity moves from one chunk to another.
+     * 
+     * function callback (entity, lastChunkID, nextChunkID, startPos){
+     *  ... do magic here
+     * }
+     * 
+     * @param {function} c 
+     */
+    setChunkSwitchCallback(c){
+        this.chunkSwitchCallback = c;
     }
 
 }

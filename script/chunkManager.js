@@ -59,6 +59,7 @@ class ChunkManager {
         this.addPlayer = this.addPlayer.bind(this);
         this.addEntity = this.addEntity.bind(this);
         this.switchPlayerChunk = this.switchPlayerChunk.bind(this);
+        this.switchEntityChunk = this.switchEntityChunk.bind(this);
         this.removePlayer = this.removePlayer.bind(this);
         this.checkChunkExists = this.checkChunkExists.bind(this);
         this.createChunk = this.createChunk.bind(this);
@@ -182,6 +183,10 @@ class ChunkManager {
     addEntity(entity){
         let chunkID = chunkPosToID(getChunkPos(entity.position));
 
+        if(entity.entityType != "Player"){
+            entity.setChunkSwitchCallback(this.switchEntityChunk);
+        }
+
         if(this.loadedChunks.hasOwnProperty(chunkID)){
             entity.setCollisionCallback(this.solveCollision);
             this.loadedChunks[chunkID].addEntity(entity);
@@ -228,6 +233,30 @@ class ChunkManager {
         let updated = this.updateClient(client, true);
         if (!updated) {
             this.clientsToUpdate.push(client);
+        }
+    }
+
+    /**
+     * Switches the chunk that an entity is in.
+     * 
+     * @param {Entity} entity instance of entity.
+     * @param {string} lastChunkID id of previous chunk.
+     * @param {string} nextChunkID id of next chunk.
+     * @param {[Number]} returnPos pos to return entity to if it can't be despawned and is moving into an unloaded chunk.
+     */
+    switchEntityChunk(entity, lastChunkID, nextChunkID) {
+        if (this.loadedChunks.hasOwnProperty(lastChunkID) && this.loadedChunks.hasOwnProperty(nextChunkID)){
+            let lastChunk = this.loadedChunks[lastChunkID];
+            let nextChunk = this.loadedChunks[nextChunkID];
+
+            lastChunk.removeEntity(entity.id);
+            nextChunk.addEntity(entity);
+            
+        }else if(this.loadedChunks.hasOwnProperty(lastChunkID)){
+            let lastChunk = this.loadedChunks[lastChunkID];
+            if(lastChunk.savedEntityList.hasOwnProperty(entity.id)){
+                entity.position = returnPos;
+            }
         }
     }
 

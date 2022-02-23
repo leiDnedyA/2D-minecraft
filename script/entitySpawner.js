@@ -40,10 +40,8 @@ class EntitySpawner{
                     npcCount++;
                 }
             }
-
-            if(!containsPlayer){
-                chunk.entityList = {}
-            }else if(npcCount < maxEntitiesPerChunk && Math.random() > .9){
+            
+            if(npcCount < maxEntitiesPerChunk && Math.random() > .9){
                 let worldPos = chunk.randomWalkableTile();
                 let entity = new NPC(generateUID(), worldPos, 'npc')
                 this.addEntity(entity);

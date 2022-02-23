@@ -85,9 +85,7 @@ class DatabaseManager{
      * @param {Chunk} chunk 
      */
     updateChunk(chunk){
-        ChunkModel.updateOne({'chunkID': chunk.getChunkID()}, {tileMap: chunk.tileMap}).then(
-            console.log(`updated chunk ${chunk.getChunkID()}`)
-        );
+        ChunkModel.updateOne({'chunkID': chunk.getChunkID()}, {tileMap: chunk.tileMap});
     }
 
 }
