@@ -32,6 +32,8 @@ class Client {
         this.emitEntityData = this.emitEntityData.bind(this);
         this.setClickCallback = this.setClickCallback.bind(this);
         this.handleClick = this.handleClick.bind(this);
+
+        this.forceDisconnect = this.forceDisconnect.bind(this);
         // this.emitPlayerData = this.emitPlayerData.bind(this);
     }
 
@@ -137,6 +139,10 @@ class Client {
         if(this.clickCallback){
             this.clickCallback(this.player, isLeftClick, pos, blockID);
         }
+    }
+
+    forceDisconnect(){
+        this.socket.disconnect();
     }
 }
 

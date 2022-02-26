@@ -2,6 +2,7 @@
 <html>
   <head> </head>
   <body>
+    <h2>Players</h2>
     <table id="playerDataTable">
       <tbody>
         <tr id="playerDataTableHeader">
@@ -10,24 +11,29 @@
           <th>Position</th>
         </tr>
       </tbody>
+      <button id="refreshButton">Refresh player data</button>
     </table>
 
-    <button id="testButton">Test Button</button>
+    <h2>Chunks</h2>
 
     <script>
       const electron = require("electron");
       const { ipcRenderer } = electron;
-      const testButton = document.querySelector("#testButton");
       const playerDataTable = document.querySelector("#playerDataTable");
+      const refreshButton = document.querySelector("#refreshButton");
 
       ipcRenderer.send("getPlayerData", "req");
+
+      refreshButton.addEventListener("click", () => {
+        ipcRenderer.send("getPlayerData", "req");
+      });
 
       let playerList = [];
 
       const updatePlayerDataTable = () => {
         let tbody = document.querySelector("tbody");
 
-        while(tbody.children.length > 1){
+        while (tbody.children.length > 1) {
           tbody.removeChild(tbody.lastChild);
         }
 
@@ -46,7 +52,13 @@
           let positionElement = document.createElement("td");
           positionElement.innerHTML = `[${player.position[0]}, ${player.position[1]}]`;
 
-          let childElements = [nameElement, idElement, positionElement];
+          let disconnectButton = document.createElement("button");
+          disconnectButton.innerHTML = "Disconnect";
+          disconnectButton.addEventListener("click", () => {
+            ipcRenderer.send('disconnectPlayer', {id: playerList[i].id});
+          });
+
+          let childElements = [nameElement, idElement, positionElement, disconnectButton];
 
           for (let i in childElements) {
             row.appendChild(childElements[i]);
@@ -58,7 +70,6 @@
 
       ipcRenderer.on("playerData", (event, data) => {
         playerList = data;
-        console.log(playerList);
         updatePlayerDataTable();
       });
     </script>

@@ -35,6 +35,8 @@ const loadedChunks = {};
 const fps = 30;
 var lastUpdate = Date.now();
 
+const additionalUpdates = [] //list of additional update functions, all will be passed deltaTime as parameter
+
 //game functions
 const update = () => {
     let now = Date.now();
@@ -47,6 +49,10 @@ const update = () => {
 
     for (let i in clients) {
         chunkManager.updateClient(clients[i]);
+    }
+
+    for(let i in additionalUpdates){
+        additionalUpdates[i](deltaTime);
     }
 
 }
@@ -90,6 +96,24 @@ const handleNewConnection = (socket) => {
 }
 
 if (process.env.USEGUI == "true") {
+
+    let sendPlayerData = ()=>{
+        let playerList = [];
+
+        let posDecimals = 3;
+
+        for (let i in Object.keys(clients)) {
+            let client = clients[Object.keys(clients)[i]];
+            playerList.push({
+                name: `Player #${parseInt(i) + 1}`,
+                id: client.id,
+                position: [client.player.position[0].toFixed(posDecimals), client.player.position[1].toFixed(posDecimals)]
+            })
+        }
+
+        GUI.sendData('playerData', playerList);
+    }
+
     GUI.app.on('ready', () => {
         GUI.init([
             {
@@ -98,11 +122,18 @@ if (process.env.USEGUI == "true") {
                 }
             },
             {
-                eventName: 'getPlayerData', callback: (event, data) => {
-                    GUI.sendData('playerData', [{name: 'John', id: '4i12481294821', position: [44, -20]}])
+                eventName: 'getPlayerData', callback: sendPlayerData
+            },
+            {
+                eventName: 'disconnectPlayer', callback: (event, data)=>{
+                    if(clients.hasOwnProperty(data.id)){
+                        clients[data.id].forceDisconnect();
+                        console.log(`Kicked player at id: ${data.id}`);
+                    }
                 }
             }
         ])
+        setInterval(sendPlayerData, 1000);
     });
 }
 

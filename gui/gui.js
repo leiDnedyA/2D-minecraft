@@ -16,11 +16,14 @@ const init = (eventHandlerArray) => {
         width: 800,
         height: 600,
         resizable: false,
+        title: "Aydencraft ServerTools",
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
         }
     });
+
+    win.setAlwaysOnTop(true, 'screen');
 
     win.loadURL(url.format({
         pathname: path.join(__dirname, 'gui.html'),
