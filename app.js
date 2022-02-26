@@ -1,5 +1,8 @@
 require("dotenv").config()
 
+//GUI import
+const GUI = require('./gui/gui.js');
+
 //helper functions
 const generateUID = require('./script/uidTools.js').generateUID;
 
@@ -32,27 +35,33 @@ const loadedChunks = {};
 const fps = 30;
 var lastUpdate = Date.now();
 
+const additionalUpdates = [] //list of additional update functions, all will be passed deltaTime as parameter
+
 //game functions
-const update = ()=>{
+const update = () => {
     let now = Date.now();
-    let deltaTime = (now - lastUpdate) / (1000/fps);
+    let deltaTime = (now - lastUpdate) / (1000 / fps);
     lastUpdate = now;
 
     let entityData = [];
 
     chunkManager.update(deltaTime);
 
-    for(let i in clients){
+    for (let i in clients) {
         chunkManager.updateClient(clients[i]);
+    }
+
+    for(let i in additionalUpdates){
+        additionalUpdates[i](deltaTime);
     }
 
 }
 
 const justinsIP = '';
 
-const handleNewConnection = (socket)=>{
+const handleNewConnection = (socket) => {
     console.log(`${socket.handshake.address} joined at ${Date.now()}`);
-    if(socket.handshake.address !== justinsIP){
+    if (socket.handshake.address !== justinsIP) {
 
         let c = new Client(socket, generateUID());
         let id = c.id;
@@ -63,7 +72,7 @@ const handleNewConnection = (socket)=>{
 
         //all socket.on calls
 
-        socket.emit('init', { clientID: id , tileDict: tileDict});
+        socket.emit('init', { clientID: id, tileDict: tileDict });
 
         socket.on("clientInput", (data) => {
             c.player.charController.setKeysDown(data.keysDown);
@@ -83,9 +92,50 @@ const handleNewConnection = (socket)=>{
             delete clients[id];
         })
     }
-    
+
 }
 
+if (process.env.USEGUI == "true") {
+
+    let sendPlayerData = ()=>{
+        let playerList = [];
+
+        let posDecimals = 3;
+
+        for (let i in Object.keys(clients)) {
+            let client = clients[Object.keys(clients)[i]];
+            playerList.push({
+                name: client.username,
+                id: client.id,
+                position: [client.player.position[0].toFixed(posDecimals), client.player.position[1].toFixed(posDecimals)]
+            })
+        }
+
+        GUI.sendData('playerData', playerList);
+    }
+
+    GUI.app.on('ready', () => {
+        GUI.init([
+            {
+                eventName: 'test', callback: (event, data) => {
+                    console.log(data);
+                }
+            },
+            {
+                eventName: 'getPlayerData', callback: sendPlayerData
+            },
+            {
+                eventName: 'disconnectPlayer', callback: (event, data)=>{
+                    if(clients.hasOwnProperty(data.id)){
+                        clients[data.id].forceDisconnect();
+                        console.log(`Kicked player at id: ${data.id}`);
+                    }
+                }
+            }
+        ])
+        setInterval(sendPlayerData, 1000);
+    });
+}
 
 
 //server setup
@@ -98,4 +148,4 @@ server.listen(process.env.PORT, () => {
 io.on("connection", handleNewConnection);
 
 //game loop
-setInterval(update, 1000/fps);
+setInterval(update, 1000 / fps);

@@ -1,7 +1,19 @@
 const Player = require("./player");
 
+const {getRandomInt} = require("./numUtilities.js");
+
 const chunkPosToID = (chunkPos)=>{
     return `${chunkPos[0]}x${chunkPos[1]}`
+}
+
+const hiraganaList = 'ぁあぃいぅうぇえぉおかがきぎくぐけげこごさざしじすずせぜそぞただちぢっつづてでとどなにぬねのはばぱひびぴふぶぷへべぺほぼぽまみむめもゃやゅゆょよらりるれろゎわゐゑをんゔゕゖ゚゛゜ゝゞゟ゠ァアィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶヷヸヹヺ・ーヽヾヿ㍐㍿'
+
+const getRandomName = (length)=>{
+    let name = '';
+    for(let i = 0; i < length; i++){
+        name += hiraganaList[getRandomInt(0, hiraganaList.length - 1)]
+    }
+    return name;
 }
 
 /**
@@ -19,6 +31,8 @@ class Client {
         this.id = id;
         this.player;
 
+        this.username = getRandomName(getRandomInt(4, 11));
+
         this.currentChunkIDs = [];
         this.currentChunkID;
 
@@ -32,6 +46,8 @@ class Client {
         this.emitEntityData = this.emitEntityData.bind(this);
         this.setClickCallback = this.setClickCallback.bind(this);
         this.handleClick = this.handleClick.bind(this);
+
+        this.forceDisconnect = this.forceDisconnect.bind(this);
         // this.emitPlayerData = this.emitPlayerData.bind(this);
     }
 
@@ -137,6 +153,10 @@ class Client {
         if(this.clickCallback){
             this.clickCallback(this.player, isLeftClick, pos, blockID);
         }
+    }
+
+    forceDisconnect(){
+        this.socket.disconnect();
     }
 }
 

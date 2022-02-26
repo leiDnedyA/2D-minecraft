@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "devstart": "nodemon app.js",
+    "devstart": "electronmon app.js",
     "start": "node app.js"
   },
   "repository": {
@@ -20,8 +20,11 @@
   "homepage": "https://github.com/leiDnedyA/2D-minecraft#readme",
   "dependencies": {
     "dotenv": "^12.0.3",
+    "electron": "^17.1.0",
+    "electronmon": "^2.0.2",
     "express": "^4.17.2",
     "mongoose": "^6.2.3",
-    "socket.io": "^4.4.1"
+    "socket.io": "^4.4.1",
+    "url": "^0.11.0"
   }
 }

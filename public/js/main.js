@@ -102,5 +102,10 @@ socket.on("entityData", (data)=>{
     entities = data.entities;
 })
 
+socket.on('disconnect', ()=>{
+    document.body.remove();
+    alert('Client disconnected by server...');
+})
+
 //game loop
 setInterval(update, 1000/fps);

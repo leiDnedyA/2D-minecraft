@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head> </head>
+  <body>
+    <h2>Players</h2>
+    <table id="playerDataTable">
+      <tbody>
+        <tr id="playerDataTableHeader">
+          <th>Name</th>
+          <th>ID</th>
+          <th>Position</th>
+        </tr>
+      </tbody>
+      <button id="refreshButton">Refresh player data</button>
+    </table>
+
+    <h2>Chunks</h2>
+
+    <script>
+      const electron = require("electron");
+      const { ipcRenderer } = electron;
+      const playerDataTable = document.querySelector("#playerDataTable");
+      const refreshButton = document.querySelector("#refreshButton");
+
+      ipcRenderer.send("getPlayerData", "req");
+
+      refreshButton.addEventListener("click", () => {
+        ipcRenderer.send("getPlayerData", "req");
+      });
+
+      let playerList = [];
+
+      const updatePlayerDataTable = () => {
+        let tbody = document.querySelector("tbody");
+
+        while (tbody.children.length > 1) {
+          tbody.removeChild(tbody.lastChild);
+        }
+
+        for (let i in playerList) {
+          let player = playerList[i];
+
+          let row = document.createElement("tr");
+          row.id = playerList[i].id;
+
+          let nameElement = document.createElement("td");
+          nameElement.innerHTML = player.name;
+
+          let idElement = document.createElement("td");
+          idElement.innerHTML = player.id;
+
+          let positionElement = document.createElement("td");
+          positionElement.innerHTML = `[${player.position[0]}, ${player.position[1]}]`;
+
+          let disconnectButton = document.createElement("button");
+          disconnectButton.innerHTML = "Disconnect";
+          disconnectButton.addEventListener("click", () => {
+            ipcRenderer.send('disconnectPlayer', {id: playerList[i].id});
+          });
+
+          let childElements = [nameElement, idElement, positionElement, disconnectButton];
+
+          for (let i in childElements) {
+            row.appendChild(childElements[i]);
+          }
+
+          tbody.appendChild(row);
+        }
+      };
+
+      ipcRenderer.on("playerData", (event, data) => {
+        playerList = data;
+        updatePlayerDataTable();
+      });
+    </script>
+  </body>
+</html>
