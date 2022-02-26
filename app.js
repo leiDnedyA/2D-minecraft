@@ -105,7 +105,7 @@ if (process.env.USEGUI == "true") {
         for (let i in Object.keys(clients)) {
             let client = clients[Object.keys(clients)[i]];
             playerList.push({
-                name: `Player #${parseInt(i) + 1}`,
+                name: client.username,
                 id: client.id,
                 position: [client.player.position[0].toFixed(posDecimals), client.player.position[1].toFixed(posDecimals)]
             })
