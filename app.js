@@ -1,5 +1,8 @@
 require("dotenv").config()
 
+//GUI import
+const GUI = require('./gui/gui.js');
+
 //helper functions
 const generateUID = require('./script/uidTools.js').generateUID;
 
@@ -33,16 +36,16 @@ const fps = 30;
 var lastUpdate = Date.now();
 
 //game functions
-const update = ()=>{
+const update = () => {
     let now = Date.now();
-    let deltaTime = (now - lastUpdate) / (1000/fps);
+    let deltaTime = (now - lastUpdate) / (1000 / fps);
     lastUpdate = now;
 
     let entityData = [];
 
     chunkManager.update(deltaTime);
 
-    for(let i in clients){
+    for (let i in clients) {
         chunkManager.updateClient(clients[i]);
     }
 
@@ -50,9 +53,9 @@ const update = ()=>{
 
 const justinsIP = '';
 
-const handleNewConnection = (socket)=>{
+const handleNewConnection = (socket) => {
     console.log(`${socket.handshake.address} joined at ${Date.now()}`);
-    if(socket.handshake.address !== justinsIP){
+    if (socket.handshake.address !== justinsIP) {
 
         let c = new Client(socket, generateUID());
         let id = c.id;
@@ -63,7 +66,7 @@ const handleNewConnection = (socket)=>{
 
         //all socket.on calls
 
-        socket.emit('init', { clientID: id , tileDict: tileDict});
+        socket.emit('init', { clientID: id, tileDict: tileDict });
 
         socket.on("clientInput", (data) => {
             c.player.charController.setKeysDown(data.keysDown);
@@ -83,9 +86,25 @@ const handleNewConnection = (socket)=>{
             delete clients[id];
         })
     }
-    
+
 }
 
+if (process.env.USEGUI == "true") {
+    GUI.app.on('ready', () => {
+        GUI.init([
+            {
+                eventName: 'test', callback: (event, data) => {
+                    console.log(data);
+                }
+            },
+            {
+                eventName: 'getPlayerData', callback: (event, data) => {
+                    GUI.sendData('playerData', [{name: 'John', id: '4i12481294821', position: [44, -20]}])
+                }
+            }
+        ])
+    });
+}
 
 
 //server setup
@@ -98,4 +117,4 @@ server.listen(process.env.PORT, () => {
 io.on("connection", handleNewConnection);
 
 //game loop
-setInterval(update, 1000/fps);
+setInterval(update, 1000 / fps);

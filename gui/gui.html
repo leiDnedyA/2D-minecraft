@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+  <head> </head>
+  <body>
+    <table id="playerDataTable">
+      <tbody>
+        <tr id="playerDataTableHeader">
+          <th>Name</th>
+          <th>ID</th>
+          <th>Position</th>
+        </tr>
+      </tbody>
+    </table>
+
+    <button id="testButton">Test Button</button>
+
+    <script>
+      const electron = require("electron");
+      const { ipcRenderer } = electron;
+      const testButton = document.querySelector("#testButton");
+      const playerDataTable = document.querySelector("#playerDataTable");
+
+      ipcRenderer.send("getPlayerData", "req");
+
+      let playerList = [];
+
+      const updatePlayerDataTable = () => {
+        let tbody = document.querySelector("tbody");
+
+        while(tbody.children.length > 1){
+          tbody.removeChild(tbody.lastChild);
+        }
+
+        for (let i in playerList) {
+          let player = playerList[i];
+
+          let row = document.createElement("tr");
+          row.id = playerList[i].id;
+
+          let nameElement = document.createElement("td");
+          nameElement.innerHTML = player.name;
+
+          let idElement = document.createElement("td");
+          idElement.innerHTML = player.id;
+
+          let positionElement = document.createElement("td");
+          positionElement.innerHTML = `[${player.position[0]}, ${player.position[1]}]`;
+
+          let childElements = [nameElement, idElement, positionElement];
+
+          for (let i in childElements) {
+            row.appendChild(childElements[i]);
+          }
+
+          tbody.appendChild(row);
+        }
+      };
+
+      ipcRenderer.on("playerData", (event, data) => {
+        playerList = data;
+        console.log(playerList);
+        updatePlayerDataTable();
+      });
+    </script>
+  </body>
+</html>
