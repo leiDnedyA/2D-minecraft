@@ -3,6 +3,11 @@
     margin: 0;
     padding: 0;
     overflow: hidden;
+    background-color: #000210;
+}
+
+body {
+    
 }
 
 canvas, img {

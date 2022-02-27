@@ -31,7 +31,7 @@ class Client {
         this.id = id;
         this.player;
 
-        this.username = getRandomName(getRandomInt(4, 11));
+        this.username = getRandomName(getRandomInt(4, 7));
 
         this.currentChunkIDs = [];
         this.currentChunkID;
