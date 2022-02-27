@@ -20,7 +20,7 @@ const gameColors = {
 
 const entityColorDict = {
     Player: gameColors.red,
-    NPC: 'orange'
+    NPC: gameColors.mutedGreen
 }
 
 // const tileDict = {
@@ -137,7 +137,12 @@ class Renderer{
 
         for(let i in entities){
             let e = entities[i];
-            this.ctx.fillStyle = entityColorDict[e.type];
+            
+            if(e.uniqueColor !== null){
+                this.ctx.fillStyle = e.uniqueColor;
+            }else{
+                this.ctx.fillStyle = entityColorDict[e.type];
+            }
             this.ctx.fillRect((e.position[0] + this.cameraOffset[0]) * this.unitSize, (e.position[1] + this.cameraOffset[1]) * this.unitSize, this.unitSize, this.unitSize);
             if(e.name !== null){
                 this.ctx.fillStyle = 'white';

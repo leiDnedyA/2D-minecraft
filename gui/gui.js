@@ -3,6 +3,8 @@ const { app, BrowserWindow, ipcMain } = electron;
 const path = require('path');
 const url = require('url');
 
+require("dotenv").config()
+
 let win = null;
 
 /**
@@ -23,7 +25,9 @@ const init = (eventHandlerArray) => {
         }
     });
 
-    win.setAlwaysOnTop(true, 'screen');
+    if(process.env.GUIONTOP == "true"){
+        win.setAlwaysOnTop(true, 'screen');
+    }
 
     win.loadURL(url.format({
         pathname: path.join(__dirname, 'gui.html'),

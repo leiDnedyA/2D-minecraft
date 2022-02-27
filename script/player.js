@@ -20,6 +20,9 @@ class Player extends Entity{
         this.speedMultiplier = 2;
     
         this.update = this.update.bind(this);
+
+        this.uniqueColor = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+
     }
 
     update(deltaTime){
