@@ -144,7 +144,7 @@ class Chunk {
         let eList = [];
         for (let i in this.entityList) {
             let e = this.entityList[i];
-            eList.push({ type: e.getType(), position: e.position, id: e.id });
+            eList.push({ type: e.getType(), position: e.position, id: e.id, name: (e.hasOwnProperty('name')) ? e.name : null});
         }
         return eList;
     }

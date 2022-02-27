@@ -58,6 +58,7 @@ class Client {
      */
     createPlayer(startingPos){
         this.player = new Player(this.id, this.id, startingPos);
+        this.player.name = this.username;
         this.currentChunkID = [startingPos[0]/64, startingPos[1]/64];
     }
 

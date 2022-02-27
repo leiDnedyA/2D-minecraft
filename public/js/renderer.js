@@ -139,6 +139,11 @@ class Renderer{
             let e = entities[i];
             this.ctx.fillStyle = entityColorDict[e.type];
             this.ctx.fillRect((e.position[0] + this.cameraOffset[0]) * this.unitSize, (e.position[1] + this.cameraOffset[1]) * this.unitSize, this.unitSize, this.unitSize);
+            if(e.name !== null){
+                this.ctx.fillStyle = 'white';
+                let nameWidth = this.ctx.measureText(e.name).width;
+                this.ctx.fillText(e.name, ((e.position[0] + this.cameraOffset[0]) * this.unitSize) - (nameWidth / 2) + (this.unitSize / 2), (e.position[1] + this.cameraOffset[1]) * this.unitSize - 5);
+            }
         }
 
         for(let i in this.uiElements){
